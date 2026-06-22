@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fitz's World Cup 2026 Photo Booth</title>
+    <style>
+        :root {
+            --pitch-green: #1e5a38;
+            --stadium-dark: #0d2619;
+            --gold: #f1c40f;
+            --white: #ffffff;
+            --booth-red: #e74c3c;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px 10px;
+            box-sizing: border-box;
+            background: radial-gradient(circle, #1e5a38 0%, var(--stadium-dark) 100%);
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        h1 {
+            text-transform: uppercase;
+            font-size: 2.3rem;
+            margin: 5px 0 15px 0;
+            text-shadow: 3px 3px 0px #000;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .gold { color: var(--gold); }
+
+        .booth-widescreen-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            max-width: 960px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .booth-box {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border: 10px solid #fff;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+            background-color: #111;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        #webcam { 
+            position: absolute;
+            top: 0; left: 0;
+            width: 1px; height: 1px;
+            opacity: 0.01;
+            pointer-events: none;
+        }
+
+        #boothCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .right-sidebar-controls {
+            display: flex;
+            flex-direction: column;
+            width: 260px;
+            gap: 15px;
+        }
+
+        .section-title {
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .frame-selectors {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .frame-btn {
+            background: #222;
+            color: #fff;
+            border: 3px solid #555;
+            padding: 10px 12px;
+            font-family: 'Impact', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .frame-btn:hover { border-color: var(--gold); }
+        .frame-btn.active {
+            background: var(--gold);
+            color: #000;
+            border-color: #fff;
+            box-shadow: 0 0 12px var(--gold);
+        }
+
+        .snap-btn {
+            background: linear-gradient(180deg, var(--booth-red) 0%, #c0392b 100%);
+            border: 4px solid #fff;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.4rem;
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            transition: transform 0.1s;
+            margin-top: 5px;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .snap-btn:active { transform: scale(0.95); }
+        .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
+
+        .help-btn {
+            background: #34495e;
+            color: white;
+            border: 2px solid #fff;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            font-family: sans-serif;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+
+        #statusFeedback {
+            font-size: 1.05rem;
+            color: var(--gold);
+            text-shadow: 1px 1px 0 #000;
+            min-height: 1.4em;
+            font-family: sans-serif;
+        }
+
+        #countdown {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 9rem;
+            color: var(--gold);
+            text-shadow: 6px 6px 0px #000;
+            display: none;
+            z-index: 10;
+        }
+
+        #flashLayer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; opacity: 0; pointer-events: none; z-index: 20;
+        }
+        .flash-trigger { animation: suddenFlash 0.3s ease-out; }
+        @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        .filmstrip-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+        }
+        #galleryStrip {
+            display: flex;
+            gap: 15px;
+            max-width: 90vw;
+            overflow-x: auto;
+            padding: 10px;
+        }
+        
+        .captured-strip {
+            height: 420px; 
+            width: auto;
+            border: 5px solid #fff;
+            border-radius: 6px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .captured-strip:hover { transform: scale(1.05); }
+
+        #stitchCanvas { display: none; }
+
+        #helpBox {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            color: #333;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 100;
+            max-width: 450px;
+            font-family: sans-serif;
+            line-height: 1.5;
+        }
+        #helpBox h4 { margin-top: 0; font-family: 'Impact', sans-serif; font-size: 1.4rem; color: var(--booth-red); letter-spacing: 1px;}
+        #helpBox button { background: #333; color: #fff; border: 0; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        #helpOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
+    </style>
+</head>
+<body>
+
+    <h1>⚽ FITZ'S 8th BIRTHDAY BOOTH 🏆</h1>
+
+    <div class="booth-widescreen-layout">
+        
+        <div class="booth-box">
+            <video id="webcam" autoplay playsinline muted webkit-playsinline></video>
+            <canvas id="boothCanvas" width="640" height="480"></canvas>
+            <div id="countdown">3</div>
+            <div id="flashLayer"></div>
+        </div>
+
+        <div class="right-sidebar-controls">
+            <div class="section-title">Select Card / Border:</div>
+            <div class="frame-selectors">
+                <button class="frame-btn active" onclick="selectFrame('usa', event)">🇺🇸 USA Panini Card</button>
+                <button class="frame-btn" onclick="selectFrame('mexico', event)">🇲🇽 Mexico Panini Card</button>
+                <button class="frame-btn" onclick="selectFrame('argentina', event)">🇦🇷 Argentina Panini Card</button>
+                <button class="frame-btn" onclick="selectFrame('worldcup', event)">🏆 World Cup Let's Go!</button>
+                <button class="frame-btn" onclick="selectFrame('yr2026', event)">🏁 2026 Grid Border</button>
+                <button class="frame-btn" onclick="selectFrame('birthday', event)">🎉 Happy Birthday Fitz!</button>
+            </div>
+
+            <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()">Take 3-Shot Strip!</button>
+            <div id="statusFeedback">Loading custom graphics...</div>
+            <button class="help-btn" onclick="toggleHelp(true)">📷 Camera Help</button>
+        </div>
+
+    </div>
+
+    <div class="filmstrip-container">
+        <div class="section-title">🏅 Tap a strip below to Save/Download 🏅</div>
+        <div id="galleryStrip"></div>
+    </div>
+
+    <div id="helpOverlay" onclick="toggleHelp(false)"></div>
+    <div id="helpBox">
+        <h4>🔒 Camera Permission Fixes</h4>
+        <p>Browsers block local cameras when opening files directly. Try these steps:</p>
+        <ol>
+            <li>Look at the very left edge of your browser's address bar. Click the <strong>Lock 🔒 or Camera 🎥 icon</strong> next to the file path and change Camera to <strong>"Allow"</strong>.</li>
+            <li><strong>Incognito Mode:</strong> Open a private/incognito window and drag-and-drop this file right into it.</li>
+            <li>If using iPad, open the iPad main <strong>Settings > Safari > Camera</strong> and set it to <strong>"Allow"</strong>.</li>
+        </ol>
+        <button onclick="toggleHelp(false)">Got It!</button>
+    </div>
+
+    <canvas id="stitchCanvas" width="360" height="1080"></canvas>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const liveCanvas = document.getElementById('boothCanvas');
+        const liveCtx = liveCanvas.getContext('2d');
+        const stitchCanvas = document.getElementById('stitchCanvas');
+        const stitchCtx = stitchCanvas.getContext('2d');
+        
+        const snapBtn = document.getElementById('snapBtn');
+        const statusFeedback = document.getElementById('statusFeedback');
+        const countdownDiv = document.getElementById('countdown');
+        const flashLayer = document.getElementById('flashLayer');
+        const galleryStrip = document.getElementById('galleryStrip');
+
+        let currentFrame = 'usa';
+        let capturedFrames = [];
+
+        // Preload your 6 specific Image Assets
+        const frames = {
+            usa: new Image(),
+            mexico: new Image(),
+            argentina: new Image(),
+            worldcup: new Image(),
+            yr2026: new Image(),
+            birthday: new Image()
+        };
+
+        frames.usa.src = 'USA Panini.png';
+        frames.mexico.src = 'Mexico Panini.png';
+        frames.argentina.src = 'Argentina Panini.png';
+        frames.worldcup.src = 'World Cup.png';
+        frames.yr2026.src = '2026.png';
+        frames.birthday.src = 'Happy Birthday.png';
+
+        function selectFrame(frameId, e) {
+            currentFrame = frameId;
+            document.querySelectorAll('.frame-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+        }
+
+        async function startCamera() {
+            try {
+                const constraints = {
+                    audio: false,
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: "user"
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true);
+                video.setAttribute('webkit-playsinline', true);
+                
+                await video.play();
+                statusFeedback.innerText = "Stadium ready! Let's play!";
+                requestAnimationFrame(renderLoop);
+            } catch (err) {
+                statusFeedback.innerText = "⚠️ Camera blocked. See help steps.";
+                console.error(err);
+            }
+        }
+
+        function renderLoop() {
+            liveCtx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
+
+            // Mirror webcam view horizontally so it feels natural to frame yourself
+            liveCtx.save();
+            liveCtx.translate(liveCanvas.width, 0);
+            liveCtx.scale(-1, 1);
+            
+            if (video.readyState >= 2) { 
+                liveCtx.drawImage(video, 0, 0, liveCanvas.width, liveCanvas.height);
+            } else {
+                liveCtx.fillStyle = "#111";
+                liveCtx.fillRect(0, 0, liveCanvas.width, liveCanvas.height);
+            }
+            liveCtx.restore();
+
+            // Overlay your custom transparent PNG image frame seamlessly
+            const activeImage = frames[currentFrame];
+            if (activeImage.complete && activeImage.naturalWidth !== 0) {
+                liveCtx.drawImage(activeImage, 0, 0, liveCanvas.width, liveCanvas.height);
+            } else {
+                // Warning layout block text until you save the files into the folder
+                liveCtx.save();
+                liveCtx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                liveCtx.fillRect(40, 200, liveCanvas.width - 80, 80);
+                liveCtx.fillStyle = "var(--gold)";
+                liveCtx.font = "bold 16px sans-serif";
+                liveCtx.textAlign = "center";
+                liveCtx.fillText("Waiting to find image file:", liveCanvas.width / 2, 235);
+                liveCtx.fillStyle = "#fff";
+                liveCtx.fillText(`"${activeImage.src.split('/').pop()}"`, liveCanvas.width / 2, 260);
+                liveCtx.restore();
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        async function startPhotoSequence() {
+            if (video.readyState < 2) {
+                alert("Please grant camera access first!");
+                return;
+            }
+            snapBtn.disabled = true;
+            capturedFrames = [];
+
+            await takeSinglePhoto(1);
+            await takeSinglePhoto(2);
+            await takeSinglePhoto(3);
+
+            statusFeedback.innerText = "Processing your custom 2026 birthday strip...";
+            generateFinalStrip();
+            
+            statusFeedback.innerText = "Ready for the next match!";
+            snapBtn.disabled = false;
+        }
+
+        function takeSinglePhoto(photoNumber) {
+            return new Promise((resolve) => {
+                statusFeedback.innerText = `Get ready for Photo ${photoNumber}!`;
+                let currentCount = 3;
+                countdownDiv.innerText = currentCount;
+                countdownDiv.style.display = 'block';
+
+                const timerInterval = setInterval(() => {
+                    currentCount--;
+                    if (currentCount > 0) {
+                        countdownDiv.innerText = currentCount;
+                    } else {
+                        clearInterval(timerInterval);
+                        countdownDiv.style.display = 'none';
+                        
+                        flashLayer.classList.add('flash-trigger');
+                        setTimeout(() => flashLayer.classList.remove('flash-trigger'), 300);
+
+                        const tempImg = new Image();
+                        tempImg.src = liveCanvas.toDataURL('image/png');
+                        tempImg.onload = () => {
+                            capturedFrames.push(tempImg);
+                            setTimeout(resolve, 1200); 
+                        };
+                    }
+                }, 1000);
+            });
+        }
+
+        function generateFinalStrip() {
+            const stripW = 360;  
+            const targetPhotoH = 270; 
+            const gap = 20;     
+            const headerH = 100; 
+            const footerH = 90;  
+
+            const totalH = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
+            stitchCanvas.height = totalH;
+            stitchCanvas.width = stripW;
+
+            // Base Background fill (Clean white photo strip look)
+            stitchCtx.fillStyle = "#ffffff";
+            stitchCtx.fillRect(0, 0, stripW, totalH);
+
+            // Stitch the images vertically
+            capturedFrames.forEach((img, index) => {
+                const yOffset = headerH + (index * (targetPhotoH + gap));
+                const photoW = stripW - 40; 
+                const photoX = 20;
+                
+                stitchCtx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
+                
+                // Photo borders
+                stitchCtx.strokeStyle = "#111111";
+                stitchCtx.lineWidth = 4;
+                stitchCtx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
+            });
+
+            // Strip Header Decoration
+            stitchCtx.fillStyle = "#222222";
+            stitchCtx.textAlign = "center";
+            stitchCtx.font = "bold 26px Impact, sans-serif";
+            stitchCtx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
+            stitchCtx.font = "20px Impact, sans-serif";
+            stitchCtx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
+
+            // CUSTOM FOOTER BANNER
+            stitchCtx.fillStyle = "#1e5a38"; 
+            stitchCtx.fillRect(0, totalH - footerH, stripW, footerH);
+            
+            // Gold Banner Accent Line
+            stitchCtx.fillStyle = "#f1c40f";
+            stitchCtx.fillRect(0, totalH - footerH, stripW, 5);
+
+            // Render Text Layout onto Banner
+            stitchCtx.fillStyle = "#ffffff";
+            stitchCtx.strokeStyle = "#000000";
+            stitchCtx.lineWidth = 4;
+            stitchCtx.textAlign = "center";
+            stitchCtx.font = "bold 24px Impact, sans-serif";
+            
+            // Text Stroke & Fill
+            stitchCtx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            stitchCtx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+
+            // Export to Interactive Gallery
+            const dataUrl = stitchCanvas.toDataURL('image/png');
+            
+            const fileLink = document.createElement('a');
+            fileLink.href = dataUrl;
+            fileLink.download = `fitz_birthday_strip_${Date.now()}.png`;
+            
+            const thumbnail = document.createElement('img');
+            thumbnail.src = dataUrl;
+            thumbnail.classList.add('captured-strip');
+            
+            fileLink.appendChild(thumbnail);
+            galleryStrip.insertBefore(fileLink, galleryStrip.firstChild);
+        }
+
+        function toggleHelp(show) {
+            const displayState = show ? 'block' : 'none';
+            document.getElementById('helpBox').style.display = displayState;
+            document.getElementById('helpOverlay').style.display = displayState;
+        }
+
+        window.addEventListener('DOMContentLoaded', startCamera);
+    </script>
+</body>
+</html>
