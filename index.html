@@ -141,39 +141,64 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        .print-container {
-            display: none; 
-            flex-direction: column;
+        /* ========================================================
+           ✨ OVERLAY MODAL DISPLAY DIRECTLY INSIDE THE BOX
+           ======================================================== */
+        .print-overlay-box {
+            display: none; /* Hidden during regular camera operations */
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(13, 38, 25, 0.95); /* Deep translucent match pitch color */
+            z-index: 30;
+            flex-direction: row;
             align-items: center;
-            width: 100%;
-            margin-top: 15px;
-            background: rgba(0,0,0,0.4);
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px dashed var(--gold);
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .print-sidebar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 220px;
         }
 
         .print-btn {
             background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
             border: 4px solid #fff;
             color: white;
-            padding: 15px 30px;
-            font-size: 1.5rem;
+            padding: 15px 20px;
+            font-size: 1.4rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 12px;
             cursor: pointer;
             box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-            margin-bottom: 15px;
+            text-align: center;
         }
         .print-btn:active { transform: scale(0.95); }
 
+        .reset-btn {
+            background: #7f8c8d;
+            border: 2px solid #fff;
+            color: white;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
         #printPreviewImg {
-            height: 380px;
+            height: 440px; /* Scaled down perfectly to match the 480px box height */
             width: auto;
             border: 5px solid white;
             border-radius: 4px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
         }
 
         .help-btn {
@@ -237,21 +262,30 @@
         #helpBox button { background: #333; color: #fff; border: 0; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         #helpOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
 
+        /* ========================================================
+           🖨️ CLEAN PRINT MODE STYLING 
+           ======================================================== */
         @media print {
-            body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .help-btn, #helpBox, #helpOverlay, .section-title, .print-btn {
+            body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .help-btn, #helpBox, #helpOverlay, .section-title, .print-sidebar-actions {
                 display: none !important;
                 background: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
-            .print-container {
+            .booth-box {
+                border: none !important;
+                box-shadow: none !important;
+                background: none !important;
+                width: auto !important;
+                height: auto !important;
+            }
+            .print-overlay-box {
                 display: block !important;
                 background: none !important;
-                border: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
                 position: absolute;
                 top: 0; left: 0;
+                padding: 0 !important;
+                margin: 0 !important;
             }
             #printPreviewImg {
                 max-height: 100vh !important;
@@ -275,12 +309,22 @@
             <canvas id="boothCanvas" width="640" height="480"></canvas>
             <div id="countdown">3</div>
             <div id="flashLayer"></div>
+
+            <div class="print-overlay-box" id="printZone">
+                <div>
+                    <img id="printPreviewImg" src="" alt="Photo Strip Preview">
+                </div>
+                <div class="print-sidebar-actions">
+                    <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Strip!</button>
+                    <button class="reset-btn" onclick="closePrintZone()">⚽ Take Another!</button>
+                </div>
+            </div>
         </div>
 
         <div class="right-sidebar-controls">
             <div class="section-title">Select Card / Border:</div>
             <div class="frame-selectors">
-                <button class="frame-btn active" onclick="selectFrame('usa', event)">🇺🇸 USA Panini Card</button>
+                <button class="frame-btn active" id="btn-usa" onclick="selectFrame('usa', event)">🇺🇸 USA Panini Card</button>
                 <button class="frame-btn" onclick="selectFrame('mexico', event)">🇲🇽 Mexico Panini Card</button>
                 <button class="frame-btn" onclick="selectFrame('argentina', event)">🇦🇷 Argentina Panini Card</button>
                 <button class="frame-btn" onclick="selectFrame('worldcup', event)">🏆 World Cup Let's Go!</button>
@@ -293,13 +337,6 @@
             <button class="help-btn" onclick="toggleHelp(true)">📷 Camera Help</button>
         </div>
 
-    </div>
-
-    <div class="print-container" id="printZone">
-        <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Your Strip! 🖨️</button>
-        <div>
-            <img id="printPreviewImg" src="" alt="Photo Strip Preview">
-        </div>
     </div>
 
     <div id="helpOverlay" onclick="toggleHelp(false)"></div>
@@ -427,7 +464,7 @@
             statusFeedback.innerText = "Saving backup & generating strip...";
             generateFinalStrip();
             
-            statusFeedback.innerText = "Ready to print!";
+            statusFeedback.innerText = "Ready!";
             snapBtn.disabled = false;
         }
 
@@ -481,4 +518,62 @@
                 stitchCtx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
                 
                 stitchCtx.strokeStyle = "#111111";
-                stitchCtx.lineWidth
+                stitchCtx.lineWidth = 4;
+                stitchCtx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
+            });
+
+            stitchCtx.fillStyle = "#222222";
+            stitchCtx.textAlign = "center";
+            stitchCtx.font = "bold 26px Impact, sans-serif";
+            stitchCtx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
+            stitchCtx.font = "20px Impact, sans-serif";
+            stitchCtx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
+
+            stitchCtx.fillStyle = "#1e5a38"; 
+            stitchCtx.fillRect(0, totalH - footerH, stripW, footerH);
+            
+            stitchCtx.fillStyle = "#f1c40f";
+            stitchCtx.fillRect(0, totalH - footerH, stripW, 5);
+
+            stitchCtx.fillStyle = "#ffffff";
+            stitchCtx.strokeStyle = "#000000";
+            stitchCtx.lineWidth = 4;
+            stitchCtx.textAlign = "center";
+            stitchCtx.font = "bold 24px Impact, sans-serif";
+            
+            stitchCtx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            stitchCtx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+
+            const dataUrl = stitchCanvas.toDataURL('image/png');
+            
+            printPreviewImg.src = dataUrl;
+            printZone.style.display = 'flex'; // Triggers flex modal centered in camera frame area
+
+            // Automatic Backup Download Fallback
+            const autoLink = document.createElement('a');
+            autoLink.href = dataUrl;
+            autoLink.download = `world_cup_strip_${Date.now()}.png`;
+            document.body.appendChild(autoLink);
+            autoLink.click();
+            document.body.removeChild(autoLink);
+        }
+
+        function triggerPrinter() {
+            window.print();
+        }
+
+        function closePrintZone() {
+            printZone.style.display = 'none';
+            statusFeedback.innerText = "Stadium ready for the next match!";
+        }
+
+        function toggleHelp(show) {
+            const displayState = show ? 'block' : 'none';
+            document.getElementById('helpBox').style.display = displayState;
+            document.getElementById('helpOverlay').style.display = displayState;
+        }
+
+        window.addEventListener('DOMContentLoaded', startCamera);
+    </script>
+</body>
+</html>
