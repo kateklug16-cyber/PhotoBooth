@@ -141,7 +141,7 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        /* 👑 POPUP OVERLAY PANEL */
+        /* POPUP OVERLAY PANEL */
         .print-overlay-box {
             display: none;
             position: absolute;
@@ -152,24 +152,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             padding: 10px;
             box-sizing: border-box;
-        }
-
-        .instruction-tag {
-            color: var(--gold);
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            text-shadow: 2px 2px 0px #000;
-            margin: 0;
-            text-align: center;
-            animation: pulseText 1.5s infinite ease-in-out;
-        }
-
-        @keyframes pulseText {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
         }
 
         .print-sidebar-actions {
@@ -180,33 +165,45 @@
             justify-content: center;
         }
 
-        .reset-btn {
+        .action-btn {
             background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
             border: 3px solid #fff;
             color: white;
-            padding: 12px 30px;
+            padding: 12px 25px;
             font-size: 1.2rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 10px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
 
-        /* 🪄 REAL STANDARD IMAGE TAG: Fully touchable and saveable on iOS */
+        .reset-btn {
+            background: #7f8c8d;
+            border: 2px solid #fff;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* SCREEN PREVIEW CONSTRAINTS */
         #iosPrintTarget {
             display: block;
-            max-height: 340px; 
+            max-height: 330px; 
             width: auto;
             border: 5px solid white;
             border-radius: 4px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             background: white;
-            -webkit-user-select: contain !important; /* Forces iOS to allow "Save Image" menu */
-            user-select: contain !important;
         }
 
-        /* Hidden internal canvas used just to stitch the graphics behind the scenes */
         #hiddenStitchCanvas { display: none; }
 
         #statusFeedback {
@@ -251,12 +248,12 @@
             <div id="flashLayer"></div>
 
             <div class="print-overlay-box" id="printZone">
-                <p class="instruction-tag">👉 Press & Hold Image To Save to iPad! 👈</p>
                 
                 <img id="iosPrintTarget" alt="Twin 4x6 Photo Strip Sheet">
                 
                 <div class="print-sidebar-actions">
-                    <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player Up!</button>
+                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png">💾 Save Photo Strip</a>
+                    <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player!</button>
                 </div>
             </div>
         </div>
@@ -287,6 +284,7 @@
         const hiddenStitchCanvas = document.getElementById('hiddenStitchCanvas');
         const stitchCtx = hiddenStitchCanvas.getContext('2d');
         const iosPrintTarget = document.getElementById('iosPrintTarget');
+        const downloadLink = document.getElementById('downloadLink');
         
         const snapBtn = document.getElementById('snapBtn');
         const statusFeedback = document.getElementById('statusFeedback');
@@ -366,10 +364,10 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Baking your double strip layout...";
+            statusFeedback.innerText = "Processing double strip layout...";
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Strip ready!";
+            statusFeedback.innerText = "Strip compiled!";
             snapBtn.disabled = false;
         }
 
@@ -453,7 +451,6 @@
         }
 
         function generateTwin4x6Sheet() {
-            // Background layout sheet set to full size crisp print quality bounds
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -463,24 +460,27 @@
             const finalStripH = 740;
             const topY = 30;
 
-            // 📐 SNUG COHESION POSITIONING: Placed side-by-side perfectly in the middle
             const leftStripX = 345; 
-            const rightStripX = 597; // Sits snugly side-by-side with zero wasted space
+            const rightStripX = 597; 
 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, leftStripX, topY, finalStripW, finalStripH);
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, rightStripX, topY, finalStripW, finalStripH);
 
-            // Turn the whole layout into a native image string
             const finalDataUrl = hiddenStitchCanvas.toDataURL('image/png');
+            
+            // Set source for visual on-screen preview
             iosPrintTarget.src = finalDataUrl;
+            
+            // 🌟 FORCE SAFARI DOWNLOAD HOOK
+            downloadLink.href = finalDataUrl;
 
-            // Display on screen!
             printZone.style.display = 'flex'; 
         }
         
         function closePrintZone() {
             printZone.style.display = 'none';
             iosPrintTarget.src = "";
+            downloadLink.href = "#";
             statusFeedback.innerText = "Ready for the next match!";
         }
 
