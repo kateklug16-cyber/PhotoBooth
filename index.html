@@ -38,8 +38,6 @@
             text-align: center;
         }
 
-        .gold { color: var(--gold); }
-
         .booth-widescreen-layout {
             display: flex;
             flex-direction: row;
@@ -96,6 +94,8 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         .frame-btn {
@@ -133,7 +133,6 @@
             cursor: pointer;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
             transition: transform 0.1s;
-            margin-top: 5px;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
         }
@@ -141,20 +140,18 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        /* ========================================================
-           ✨ OVERLAY MODAL DISPLAY DIRECTLY INSIDE THE BOX
-           ======================================================== */
+        /* OVERLAY CONTAINER */
         .print-overlay-box {
-            display: none; /* Hidden during regular camera operations */
+            display: none;
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(13, 38, 25, 0.95); /* Deep translucent match pitch color */
+            background: rgba(13, 38, 25, 0.95);
             z-index: 30;
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 30px;
+            gap: 35px;
             padding: 20px;
             box-sizing: border-box;
         }
@@ -193,25 +190,14 @@
             cursor: pointer;
         }
 
-        #printPreviewImg {
-            height: 440px; /* Scaled down perfectly to match the 480px box height */
+        /* Displays the canvas version visually inside the popup menu frame */
+        #visiblePreviewCanvas {
+            height: 440px;
             width: auto;
             border: 5px solid white;
             border-radius: 4px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-        }
-
-        .help-btn {
-            background: #34495e;
-            color: white;
-            border: 2px solid #fff;
-            padding: 6px 10px;
-            font-size: 0.85rem;
-            font-family: sans-serif;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 2px;
+            background: white;
         }
 
         #statusFeedback {
@@ -241,59 +227,28 @@
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
 
+        /* Hidden backup processing canvas */
         #stitchCanvas { display: none; }
 
-        #helpBox {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            color: #333;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 100;
-            max-width: 450px;
-            font-family: sans-serif;
-            line-height: 1.5;
-        }
-        #helpBox h4 { margin-top: 0; font-family: 'Impact', sans-serif; font-size: 1.4rem; color: var(--booth-red); letter-spacing: 1px;}
-        #helpBox button { background: #333; color: #fff; border: 0; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
-        #helpOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
-
         /* ========================================================
-           🖨️ CLEAN PRINT MODE STYLING 
+           🖨️ IPAD DIRECT-CANVAS PRINT MEDIA QUERY 
            ======================================================== */
         @media print {
-            body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .help-btn, #helpBox, #helpOverlay, .section-title, .print-sidebar-actions {
+            body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .section-title, .print-sidebar-actions {
                 display: none !important;
-                background: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
             }
             .booth-box {
-                border: none !important;
-                box-shadow: none !important;
-                background: none !important;
-                width: auto !important;
-                height: auto !important;
+                border: none !important; box-shadow: none !important; background: none !important;
+                width: auto !important; height: auto !important;
             }
             .print-overlay-box {
-                display: block !important;
-                background: none !important;
-                position: absolute;
-                top: 0; left: 0;
-                padding: 0 !important;
-                margin: 0 !important;
+                display: block !important; background: none !important;
+                position: absolute; top: 0; left: 0; padding: 0 !important; margin: 0 !important;
             }
-            #printPreviewImg {
-                max-height: 100vh !important;
-                width: auto !important;
-                border: none !important;
-                box-shadow: none !important;
-                page-break-after: avoid;
-                page-break-inside: avoid;
+            #visiblePreviewCanvas {
+                display: block !important;
+                max-height: 100vh !important; width: auto !important;
+                border: none !important; box-shadow: none !important;
             }
         }
     </style>
@@ -312,7 +267,7 @@
 
             <div class="print-overlay-box" id="printZone">
                 <div>
-                    <img id="printPreviewImg" src="" alt="Photo Strip Preview">
+                    <canvas id="visiblePreviewCanvas" width="360" height="1080"></canvas>
                 </div>
                 <div class="print-sidebar-actions">
                     <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Strip!</button>
@@ -324,30 +279,18 @@
         <div class="right-sidebar-controls">
             <div class="section-title">Select Card / Border:</div>
             <div class="frame-selectors">
-                <button class="frame-btn active" id="btn-usa" onclick="selectFrame('usa', event)">🇺🇸 USA Panini Card</button>
+                <button class="frame-btn active" id="btn-birthday" onclick="selectFrame('birthday', event)">🎉 Happy Birthday Fitz!</button>
+                <button class="frame-btn" onclick="selectFrame('worldcup', event)">🏆 World Cup Let's Go!</button>
+                <button class="frame-btn" onclick="selectFrame('usa', event)">🇺🇸 USA Panini Card</button>
                 <button class="frame-btn" onclick="selectFrame('mexico', event)">🇲🇽 Mexico Panini Card</button>
                 <button class="frame-btn" onclick="selectFrame('argentina', event)">🇦🇷 Argentina Panini Card</button>
-                <button class="frame-btn" onclick="selectFrame('worldcup', event)">🏆 World Cup Let's Go!</button>
                 <button class="frame-btn" onclick="selectFrame('yr2026', event)">🏁 2026 Grid Border</button>
-                <button class="frame-btn" onclick="selectFrame('birthday', event)">🎉 Happy Birthday Fitz!</button>
             </div>
 
             <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()">Take 3-Shot Strip!</button>
             <div id="statusFeedback">Loading custom graphics...</div>
-            <button class="help-btn" onclick="toggleHelp(true)">📷 Camera Help</button>
         </div>
 
-    </div>
-
-    <div id="helpOverlay" onclick="toggleHelp(false)"></div>
-    <div id="helpBox">
-        <h4>🔒 Camera Permission Fixes</h4>
-        <p>Browsers block local cameras when opening files directly. Try these steps:</p>
-        <ol>
-            <li>Look at the address bar, click the <strong>Lock 🔒 icon</strong> and set Camera to <strong>"Allow"</strong>.</li>
-            <li><strong>Incognito Mode:</strong> Drag-and-drop this file into a private window.</li>
-        </ol>
-        <button onclick="toggleHelp(false)">Got It!</button>
     </div>
 
     <canvas id="stitchCanvas" width="360" height="1080"></canvas>
@@ -358,33 +301,33 @@
         const liveCtx = liveCanvas.getContext('2d');
         const stitchCanvas = document.getElementById('stitchCanvas');
         const stitchCtx = stitchCanvas.getContext('2d');
+        const visiblePreviewCanvas = document.getElementById('visiblePreviewCanvas');
+        const previewCtx = visiblePreviewCanvas.getContext('2d');
         
         const snapBtn = document.getElementById('snapBtn');
         const statusFeedback = document.getElementById('statusFeedback');
         const countdownDiv = document.getElementById('countdown');
         const flashLayer = document.getElementById('flashLayer');
-        
         const printZone = document.getElementById('printZone');
-        const printPreviewImg = document.getElementById('printPreviewImg');
 
-        let currentFrame = 'usa';
+        let currentFrame = 'birthday';
         let capturedFrames = [];
 
         const frames = {
+            birthday: new Image(),
+            worldcup: new Image(),
             usa: new Image(),
             mexico: new Image(),
             argentina: new Image(),
-            worldcup: new Image(),
-            yr2026: new Image(),
-            birthday: new Image()
+            yr2026: new Image()
         };
 
+        frames.birthday.src = 'Happy Birthday.png';
+        frames.worldcup.src = 'World Cup.png';
         frames.usa.src = 'USA Panini.png';
         frames.mexico.src = 'Mexico Panini.png';
         frames.argentina.src = 'Argentina Panini.png';
-        frames.worldcup.src = 'World Cup.png';
         frames.yr2026.src = '2026.png';
-        frames.birthday.src = 'Happy Birthday.png';
 
         function selectFrame(frameId, e) {
             currentFrame = frameId;
@@ -396,20 +339,15 @@
             try {
                 const constraints = {
                     audio: false,
-                    video: {
-                        width: { ideal: 640 },
-                        height: { ideal: 480 },
-                        facingMode: "user"
-                    }
+                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
                 };
-                
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
                 statusFeedback.innerText = "Stadium ready! Let's play!";
                 requestAnimationFrame(renderLoop);
             } catch (err) {
-                statusFeedback.innerText = "⚠️ Camera blocked. See help steps.";
+                statusFeedback.innerText = "⚠️ Camera blocked.";
                 console.error(err);
             }
         }
@@ -432,27 +370,13 @@
             const activeImage = frames[currentFrame];
             if (activeImage.complete && activeImage.naturalWidth !== 0) {
                 liveCtx.drawImage(activeImage, 0, 0, liveCanvas.width, liveCanvas.height);
-            } else {
-                liveCtx.save();
-                liveCtx.fillStyle = "rgba(0, 0, 0, 0.7)";
-                liveCtx.fillRect(40, 200, liveCanvas.width - 80, 80);
-                liveCtx.fillStyle = "var(--gold)";
-                liveCtx.font = "bold 16px sans-serif";
-                liveCtx.textAlign = "center";
-                liveCtx.fillText("Waiting to find image file:", liveCanvas.width / 2, 235);
-                liveCtx.fillStyle = "#fff";
-                liveCtx.fillText(`"${activeImage.src.split('/').pop()}"`, liveCanvas.width / 2, 260);
-                liveCtx.restore();
             }
 
             requestAnimationFrame(renderLoop);
         }
 
         async function startPhotoSequence() {
-            if (video.readyState < 2) {
-                alert("Please grant camera access first!");
-                return;
-            }
+            if (video.readyState < 2) return;
             snapBtn.disabled = true;
             printZone.style.display = 'none'; 
             capturedFrames = [];
@@ -461,10 +385,10 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Saving backup & generating strip...";
+            statusFeedback.innerText = "Generating championship strip...";
             generateFinalStrip();
             
-            statusFeedback.innerText = "Ready!";
+            statusFeedback.innerText = "Ready to print!";
             snapBtn.disabled = false;
         }
 
@@ -505,72 +429,69 @@
             const footerH = 90;  
 
             const totalH = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
-            stitchCanvas.height = totalH;
-            stitchCanvas.width = stripW;
+            
+            // Apply dimensions to both tracking canvases
+            stitchCanvas.height = totalH; stitchCanvas.width = stripW;
+            visiblePreviewCanvas.height = totalH; visiblePreviewCanvas.width = stripW;
 
-            stitchCtx.fillStyle = "#ffffff";
-            stitchCtx.fillRect(0, 0, stripW, totalH);
+            // Simple render helper loop to compile graphics onto both elements cleanly
+            [stitchCtx, previewCtx].forEach(ctx => {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, stripW, totalH);
 
-            capturedFrames.forEach((img, index) => {
-                const yOffset = headerH + (index * (targetPhotoH + gap));
-                const photoW = stripW - 40; 
-                const photoX = 20;
-                stitchCtx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
-                
-                stitchCtx.strokeStyle = "#111111";
-                stitchCtx.lineWidth = 4;
-                stitchCtx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
+                capturedFrames.forEach((img, index) => {
+                    const yOffset = headerH + (index * (targetPhotoH + gap));
+                    const photoW = stripW - 40; 
+                    const photoX = 20;
+                    ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
+                    
+                    ctx.strokeStyle = "#111111";
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
+                });
+
+                ctx.fillStyle = "#222222";
+                ctx.textAlign = "center";
+                ctx.font = "bold 26px Impact, sans-serif";
+                ctx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
+                ctx.font = "20px Impact, sans-serif";
+                ctx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
+
+                ctx.fillStyle = "#1e5a38"; 
+                ctx.fillRect(0, totalH - footerH, stripW, footerH);
+                ctx.fillStyle = "#f1c40f";
+                ctx.fillRect(0, totalH - footerH, stripW, 5);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 4;
+                ctx.textAlign = "center";
+                ctx.font = "bold 24px Impact, sans-serif";
+                ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+                ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
             });
 
-            stitchCtx.fillStyle = "#222222";
-            stitchCtx.textAlign = "center";
-            stitchCtx.font = "bold 26px Impact, sans-serif";
-            stitchCtx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
-            stitchCtx.font = "20px Impact, sans-serif";
-            stitchCtx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
+            printZone.style.display = 'flex'; 
 
-            stitchCtx.fillStyle = "#1e5a38"; 
-            stitchCtx.fillRect(0, totalH - footerH, stripW, footerH);
-            
-            stitchCtx.fillStyle = "#f1c40f";
-            stitchCtx.fillRect(0, totalH - footerH, stripW, 5);
-
-            stitchCtx.fillStyle = "#ffffff";
-            stitchCtx.strokeStyle = "#000000";
-            stitchCtx.lineWidth = 4;
-            stitchCtx.textAlign = "center";
-            stitchCtx.font = "bold 24px Impact, sans-serif";
-            
-            stitchCtx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-            stitchCtx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-
-            const dataUrl = stitchCanvas.toDataURL('image/png');
-            
-            printPreviewImg.src = dataUrl;
-            printZone.style.display = 'flex'; // Triggers flex modal centered in camera frame area
-
-            // Automatic Backup Download Fallback
-            const autoLink = document.createElement('a');
-            autoLink.href = dataUrl;
-            autoLink.download = `world_cup_strip_${Date.now()}.png`;
-            document.body.appendChild(autoLink);
-            autoLink.click();
-            document.body.removeChild(autoLink);
+            // Safari Local File Backup Auto-Download Trigger
+            try {
+                const dataUrl = stitchCanvas.toDataURL('image/png');
+                const autoLink = document.createElement('a');
+                autoLink.href = dataUrl;
+                autoLink.download = `world_cup_strip_${Date.now()}.png`;
+                document.body.appendChild(autoLink);
+                autoLink.click();
+                document.body.removeChild(autoLink);
+            } catch(e) {
+                console.log("Local file download restriction handled.");
+            }
         }
 
-        function triggerPrinter() {
-            window.print();
-        }
-
+        function triggerPrinter() { window.print(); }
+        
         function closePrintZone() {
             printZone.style.display = 'none';
-            statusFeedback.innerText = "Stadium ready for the next match!";
-        }
-
-        function toggleHelp(show) {
-            const displayState = show ? 'block' : 'none';
-            document.getElementById('helpBox').style.display = displayState;
-            document.getElementById('helpOverlay').style.display = displayState;
+            statusFeedback.innerText = "Ready for the next player!";
         }
 
         window.addEventListener('DOMContentLoaded', startCamera);
