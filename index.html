@@ -432,12 +432,9 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "⚡ Generating your All-Star strip...";
+            statusFeedback.innerText = "⚡ Saving strip directly to queue...";
             
-            // Generate strips instantly behind the scenes
             generateTwin4x6Sheet();
-            
-            // Queue up automatically without annoying popups
             queuePrintJob();
             
             snapBtn.disabled = false;
