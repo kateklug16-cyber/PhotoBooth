@@ -76,12 +76,11 @@
             display: block;
         }
 
-        /* 👑 SIDEBAR ADJUSTMENTS */
         .right-sidebar-controls {
             display: flex;
             flex-direction: column;
             width: 260px;
-            gap: 12px; /* Tightened gap to maximize vertical space */
+            gap: 12px;
         }
 
         .section-title {
@@ -92,22 +91,20 @@
             text-shadow: 2px 2px 0px #000;
         }
 
-        /* 📋 NO-SCROLL LIST CONTAINER */
         .frame-selectors {
             display: flex;
             flex-direction: column;
-            gap: 6px; /* Reduced gap between list elements */
-            overflow-y: visible; /* Disabled hidden inner scrolling */
+            gap: 6px;
+            overflow-y: visible;
         }
 
-        /* 🎨 OPTIMIZED BUTTON HEIGHTS */
         .frame-btn {
             background: #222;
             color: #fff;
             border: 3px solid #555;
-            padding: 8px 10px; /* Slimmer inner spacing */
+            padding: 8px 10px;
             font-family: 'Impact', sans-serif;
-            font-size: 0.85rem; /* Marginally downsized text for snug fit */
+            font-size: 0.85rem;
             text-transform: uppercase;
             border-radius: 8px;
             cursor: pointer;
@@ -124,7 +121,6 @@
             box-shadow: 0 0 12px var(--gold);
         }
 
-        /* 🎯 POSITIONED SHOT BUTTON */
         .snap-btn {
             background: linear-gradient(180deg, var(--booth-red) 0%, #c0392b 100%);
             border: 4px solid #fff;
@@ -138,14 +134,13 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
             transition: transform 0.1s;
             text-align: center;
-            margin-top: 5px; /* Pushes the main controller downward cleanly */
+            margin-top: 5px;
             -webkit-tap-highlight-color: transparent;
         }
 
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        /* POPUP OVERLAY PANEL */
         .print-overlay-box {
             display: none;
             position: absolute;
@@ -457,19 +452,20 @@
 
             const singleStripElement = buildSingleStrip();
 
-            const targetW = 740;
-            const targetH = 247;
+            // 📐 MAXIMIZED BOUNDS: Scaled up to perfectly command the 1200x800 template area
+            const targetW = 1140; 
+            const targetH = 394; 
 
-            // STRIP 1 (TOP)
+            // STRIP 1 (TOP HALF - CENTERED AT Y=200)
             stitchCtx.save();
-            stitchCtx.translate(600, 215); 
+            stitchCtx.translate(600, 200); 
             stitchCtx.rotate(-90 * Math.PI / 180); 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            // STRIP 2 (BOTTOM)
+            // STRIP 2 (BOTTOM HALF - CENTERED AT Y=600)
             stitchCtx.save();
-            stitchCtx.translate(600, 585); 
+            stitchCtx.translate(600, 600); 
             stitchCtx.rotate(-90 * Math.PI / 180); 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
