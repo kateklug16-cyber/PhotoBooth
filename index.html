@@ -12,11 +12,12 @@
             --white: #ffffff;
             --booth-red: #e74c3c;
             --green-action: #2ecc71;
+            --admin-gray: #34495e;
         }
 
         body {
             margin: 0;
-            padding: 40px 10px 15px 10px; 
+            padding: 25px 10px 15px 10px; 
             box-sizing: border-box;
             background: radial-gradient(circle, #1e5a38 0%, var(--stadium-dark) 100%);
             font-family: 'Impact', 'Arial Black', sans-serif;
@@ -25,7 +26,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
             -webkit-user-select: none;
             user-select: none;
         }
@@ -47,7 +48,7 @@
             justify-content: center;
             max-width: 960px;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .booth-box {
@@ -95,7 +96,6 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            overflow-y: visible;
         }
 
         .frame-btn {
@@ -138,7 +138,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
         .print-overlay-box {
@@ -203,36 +202,126 @@
             cursor: zoom-in;
         }
 
-        .zoom-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background-color: rgba(0, 0, 0, 0.95);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-            cursor: zoom-out;
-        }
-
-        #zoomedImage {
-            max-height: 95vh;
-            max-width: 95vw;
-            border: 8px solid white;
-            border-radius: 6px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            object-fit: contain;
-        }
-
-        #hiddenStitchCanvas, #hiddenPreviewCanvas { display: none; }
-
         #statusFeedback {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             color: var(--gold);
             text-shadow: 1px 1px 0 #000;
             min-height: 1.4em;
             font-family: sans-serif;
             font-weight: bold;
+            text-align: center;
+        }
+
+        /* ADMIN PANEL LAYOUT styles */
+        .admin-toggle-bar {
+            margin-top: 10px;
+            width: 100%;
+            max-width: 920px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .admin-btn {
+            background: var(--admin-gray);
+            color: #fff;
+            border: 2px solid #555;
+            padding: 6px 14px;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .admin-dashboard {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(15, 15, 15, 0.98);
+            z-index: 200;
+            box-sizing: border-box;
+            padding: 30px;
+            flex-direction: column;
+            overflow-y: auto;
+            font-family: sans-serif;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--gold);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .admin-title {
+            font-size: 1.8rem;
+            font-family: 'Impact', sans-serif;
+            color: var(--gold);
+            margin: 0;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .clear-btn {
+            background: var(--booth-red);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .close-admin-btn {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .gallery-card {
+            background: #222;
+            border: 3px solid #444;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gallery-card img {
+            width: 100%;
+            height: auto;
+            border: 2px solid white;
+            background: white;
+        }
+
+        .card-download-btn {
+            background: var(--green-action);
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 4px;
+            width: 90%;
+            text-align: center;
         }
 
         #countdown {
@@ -268,9 +357,9 @@
             <div id="flashLayer"></div>
 
             <div class="print-overlay-box" id="printZone">
-                <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview" onclick="openZoomView()">
+                <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview">
                 <div class="print-sidebar-actions">
-                    <button class="action-btn" onclick="sendPrintNotification()">🖨️ Print Strip</button>
+                    <button class="action-btn" onclick="queuePrintJob()">🖨️ Print Strip</button>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Back</button>
                 </div>
             </div>
@@ -293,8 +382,20 @@
 
     </div>
 
-    <div class="zoom-overlay" id="zoomLightbox" onclick="closeZoomView()">
-        <img id="zoomedImage" alt="Zoomed Photo Strip View">
+    <div class="admin-toggle-bar">
+        <button class="admin-btn" onclick="openAdminDashboard()">⚙️ Open Print Queue Manager</button>
+    </div>
+
+    <div class="admin-dashboard" id="adminDashboard">
+        <div class="admin-header">
+            <div class="admin-title">🖨️ Print Queue Master Dashboard</div>
+            <div class="admin-actions">
+                <button class="clear-btn" onclick="clearPrintQueue()">🗑️ Reset & Clear Queue</button>
+                <button class="close-admin-btn" onclick="closeAdminDashboard()">Close Panel</button>
+            </div>
+        </div>
+        <div class="gallery-grid" id="galleryGrid">
+            </div>
     </div>
 
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
@@ -315,12 +416,12 @@
         const countdownDiv = document.getElementById('countdown');
         const flashLayer = document.getElementById('flashLayer');
         const printZone = document.getElementById('printZone');
-        const zoomLightbox = document.getElementById('zoomLightbox');
-        const zoomedImage = document.getElementById('zoomedImage');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const galleryGrid = document.getElementById('galleryGrid');
 
         let currentFrame = 'birthday';
         let capturedFrames = [];
-        let totalPrintQueue = 0; // Tracks overall prints requested
+        let runningSessionDataUrl = ""; // Temporarily stores current layout context
 
         const frames = {
             birthday: new Image(),
@@ -353,10 +454,10 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
-                updateStatusText("Ready for the match!");
+                updateQueueStatus();
                 requestAnimationFrame(renderLoop);
             } catch (err) {
-                updateStatusText("⚠️ Camera blocked.");
+                statusFeedback.innerText = "⚠️ Camera blocked.";
                 console.error(err);
             }
         }
@@ -391,7 +492,7 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            updateStatusText("Processing strips...");
+            statusFeedback.innerText = "Processing strips...";
             generateTwin4x6Sheet();
             
             snapBtn.disabled = false;
@@ -399,7 +500,7 @@
 
         function takeSinglePhoto(photoNumber) {
             return new Promise((resolve) => {
-                updateStatusText(`📸 Shot ${photoNumber} of 3 incoming!`);
+                statusFeedback.innerText = `📸 Shot ${photoNumber} of 3 incoming!`;
                 let currentCount = 3;
                 countdownDiv.innerText = currentCount;
                 countdownDiv.style.display = 'block';
@@ -479,7 +580,7 @@
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. LANDSCAPE MASTER SHEET GENERATION
+            // 1. GENERATE THE 4x6 LANDSCAPE MASTER PRINT FILE
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -495,65 +596,93 @@
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            // Extract canvas payload
-            const finalSheetDataUrl = hiddenStitchCanvas.toDataURL('image/png');
+            runningSessionDataUrl = hiddenStitchCanvas.toDataURL('image/png');
 
-            // 2. PORTRAIT VIEW PREVIEW GENERATION
+            // 2. GENERATE PORTRAIT VISUAL PREVIEW
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
             previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 4, 30, 392, 1140);
             previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 404, 30, 392, 1140);
 
-            const uprightPreviewUrl = hiddenPreviewCanvas.toDataURL('image/png');
-            iosPrintTarget.src = uprightPreviewUrl;
-            zoomedImage.src = uprightPreviewUrl; 
-
+            iosPrintTarget.src = hiddenPreviewCanvas.toDataURL('image/png');
             printZone.style.display = 'flex'; 
-
-            // 🚀 INVISIBLE BACKGROUND AUTO-DOWNLOAD TRIGGER
-            // Executes flawlessly right here without requiring a visible link block
-            const hiddenAnchor = document.createElement('a');
-            hiddenAnchor.href = finalSheetDataUrl;
-            hiddenAnchor.download = `fitz-booth-${Date.now()}.png`; // Generates unique filenames so it won't overwrite old files
-            document.body.appendChild(hiddenAnchor);
-            hiddenAnchor.click();
-            document.body.removeChild(hiddenAnchor);
-            
-            updateStatusText("Saved automatically! Tap image to zoom.");
+            statusFeedback.innerText = "Review your strip!";
         }
 
-        // 👑 HANDS-FREE NOTIFICATION ROUTINE
-        function sendPrintNotification() {
-            totalPrintQueue++;
+        // 👑 TRIGGERS WHEN A KID CLICKS "PRINT STRIP" (No download prompts!)
+        function queuePrintJob() {
+            // Pull existing history vault from local database cache
+            let localQueue = JSON.parse(localStorage.getItem('boothPrintQueue') || '[]');
             
-            // Temporary overlay feedback text to charm the kids
-            const originalFeedback = statusFeedback.innerText;
-            updateStatusText("📟 Order Sent! Printing your strip now...");
+            // Add current sheet with timestamp name
+            localQueue.push({
+                id: Date.now(),
+                label: `Strip #${localQueue.length + 1}`,
+                img: runningSessionDataUrl
+            });
+            
+            // Save vault back into browser memory
+            localStorage.setItem('boothPrintQueue', JSON.stringify(localQueue));
 
-            // Reset booth after 2 seconds so the next kid can step up seamlessly
+            statusFeedback.innerText = "📟 Order Sent! Printing your strip now...";
+
             setTimeout(() => {
                 closePrintZone();
-                updateStatusText(`Ready! (${totalPrintQueue} strips waiting in your Downloads folder to be printed)`);
+                updateQueueStatus();
             }, 2000);
         }
 
-        function updateStatusText(msg) {
-            statusFeedback.innerText = msg;
+        // Updates screen status tracking numbers dynamically
+        function updateQueueStatus() {
+            const localQueue = JSON.parse(localStorage.getItem('boothPrintQueue') || '[]');
+            if(localQueue.length === 0) {
+                statusFeedback.innerText = "Ready for action! (0 strips waiting)";
+            } else {
+                statusFeedback.innerText = `Ready! (${localQueue.length} strips waiting to be printed in the Dashboard)`;
+            }
         }
 
-        function openZoomView() {
-            zoomLightbox.style.display = 'flex';
+        // DASHBOARD CONTROL MANAGEMENT HOOKS
+        function openAdminDashboard() {
+            galleryGrid.innerHTML = "";
+            const localQueue = JSON.parse(localStorage.getItem('boothPrintQueue') || '[]');
+            
+            if(localQueue.length === 0) {
+                galleryGrid.innerHTML = `<p style="color:#aaa; font-style:italic; grid-column: 1/-1; text-align:center;">The queue is empty. Go take some photos!</p>`;
+            } else {
+                localQueue.forEach((item, idx) => {
+                    const card = document.createElement('div');
+                    card.className = "gallery-card";
+                    card.innerHTML = `
+                        <strong style="color:var(--gold); font-size:1.1rem;">Strip #${idx + 1}</strong>
+                        <img src="${item.img}">
+                        <a href="${item.img}" download="booth-strip-${idx+1}.png" class="card-download-btn">💾 Save File</a>
+                    `;
+                    galleryGrid.appendChild(card);
+                });
+            }
+            adminDashboard.style.display = "flex";
         }
 
-        function closeZoomView() {
-            zoomLightbox.style.display = 'none';
+        function closeAdminDashboard() {
+            adminDashboard.style.display = "none";
+            updateQueueStatus();
         }
-        
+
+        // 🗑️ CLEARS THE QUEUE ENTIRELY & RESETS COUNT BACK TO ZERO
+        function clearPrintQueue() {
+            if(confirm("Are you sure you want to clear the print counter and delete all saved session cache strips? Make sure you have downloaded any files you need first!")) {
+                localStorage.removeItem('boothPrintQueue');
+                openAdminDashboard(); // Refresh view
+            }
+        }
+
         function closePrintZone() {
             printZone.style.display = 'none';
             iosPrintTarget.src = "";
-            zoomedImage.src = "";
+            runningSessionDataUrl = "";
+            updateQueueStatus();
         }
 
         window.addEventListener('DOMContentLoaded', startCamera);
