@@ -133,7 +133,6 @@
             border-radius: 12px;
             cursor: pointer;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-            transition: transform 0.1s;
             text-align: center;
             margin-top: 5px;
             -webkit-tap-highlight-color: transparent;
@@ -141,6 +140,7 @@
 
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
+        /* 🔒 FIXED PREVIEW CONTAINER BOUNDS */
         .print-overlay-box {
             display: none;
             position: absolute;
@@ -150,10 +150,22 @@
             z-index: 30;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 10px;
+            justify-content: space-between;
+            padding: 20px;
             box-sizing: border-box;
+        }
+
+        /* 🔒 LOCKED PREVIEW IMAGE DIMENSIONS */
+        #iosPrintTarget {
+            display: block;
+            max-height: 75%; 
+            width: auto;
+            max-width: 90%;
+            object-fit: contain;
+            border: 5px solid white;
+            border-radius: 4px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            background: white;
         }
 
         .print-sidebar-actions {
@@ -162,13 +174,14 @@
             gap: 15px;
             width: 100%;
             justify-content: center;
+            margin-top: 5px;
         }
 
         .action-btn {
             background: linear-gradient(180deg, var(--green-action) 0%, #27ae60 100%);
             border: 3px solid #fff;
             color: white;
-            padding: 12px 30px;
+            padding: 10px 30px;
             font-size: 1.25rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
@@ -183,23 +196,13 @@
             background: #7f8c8d;
             border: 3px solid #fff;
             color: white;
-            padding: 12px 20px;
+            padding: 10px 20px;
             font-size: 1.25rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 12px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
-        }
-
-        #iosPrintTarget {
-            display: block;
-            max-height: 330px; 
-            width: auto;
-            border: 5px solid white;
-            border-radius: 4px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
-            background: white;
         }
 
         #statusFeedback {
@@ -288,7 +291,7 @@
 
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 24px;
             width: 100%;
         }
@@ -304,7 +307,6 @@
             gap: 12px;
         }
 
-        /* Displays the dashboard thumbnail previews as clean upright reference points */
         .gallery-card .thumb-preview {
             max-height: 250px;
             width: auto;
@@ -323,7 +325,7 @@
             background: var(--print-blue);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 8px 12px;
             font-size: 0.85rem;
             font-weight: bold;
             border-radius: 4px;
@@ -433,6 +435,9 @@
         let capturedFrames = [];
         let masterPrintDataUrl = ""; 
         let previewDataUrl = "";
+
+        // 🚀 LIVE IN-MEMORY QUEUE ARRAY (Fixes browser storage crashes!)
+        let livePrintQueueMemory = []; 
 
         const frames = {
             birthday: new Image(),
@@ -591,7 +596,7 @@
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. GENERATE THE 4x6 LANDSCAPE MASTER PRINT FILE
+            // 1. LANDSCAPE MASTER PRINT PRODUCTION
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -609,7 +614,7 @@
 
             masterPrintDataUrl = hiddenStitchCanvas.toDataURL('image/png');
 
-            // 2. GENERATE PORTRAIT VISUAL PREVIEW
+            // 2. PORTRAIT VISUAL PREVIEW PRODUCTION
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
@@ -618,23 +623,17 @@
 
             previewDataUrl = hiddenPreviewCanvas.toDataURL('image/png');
             
-            // Open view overlay cleanly over webcam window
             iosPrintTarget.src = previewDataUrl;
             printZone.style.display = 'flex'; 
             statusFeedback.innerText = "Review your strip!";
         }
 
-        // 👑 FIRES CLEANLY WHEN THE MAIN OVERLAY BUTTON IS PRESSED
         function queuePrintJob() {
-            let localQueue = JSON.parse(localStorage.getItem('boothPrintQueue') || '[]');
-            
-            localQueue.push({
-                id: Date.now(),
-                printImg: masterPrintDataUrl, // Landscape file for hardware
-                previewImg: previewDataUrl    // Upright file for browser panel previewing
+            // Push flawlessly to local execution memory array
+            livePrintQueueMemory.push({
+                printImg: masterPrintDataUrl,
+                previewImg: previewDataUrl
             });
-            
-            localStorage.setItem('boothPrintQueue', JSON.stringify(localQueue));
 
             statusFeedback.innerText = "📟 Order Sent! Printing your strip now...";
 
@@ -644,23 +643,20 @@
         }
 
         function updateQueueStatus() {
-            const localQueue = JSON.parse(localStorage.getItem('boothPrintQueue') || '[]');
-            if(localQueue.length === 0) {
+            if(livePrintQueueMemory.length === 0) {
                 statusFeedback.innerText = "Ready for action! (0 strips waiting)";
             } else {
-                statusFeedback.innerText = `Ready! (${localQueue.length} strips waiting to be printed in the Dashboard)`;
+                statusFeedback.innerText = `Ready! (${livePrintQueueMemory.length} strips waiting to be printed in the Dashboard)`;
             }
         }
 
-        // BACKEND CONTROL UTILITIES
         function openAdminDashboard() {
             galleryGrid.innerHTML = "";
-            const localQueue = JSON.parse(localStorage.getItem('boothPrintQueue') || '[]');
             
-            if(localQueue.length === 0) {
+            if(livePrintQueueMemory.length === 0) {
                 galleryGrid.innerHTML = `<p style="color:#aaa; font-style:italic; grid-column: 1/-1; text-align:center;">The queue is empty. Go take some photos!</p>`;
             } else {
-                localQueue.forEach((item, idx) => {
+                livePrintQueueMemory.forEach((item, idx) => {
                     const card = document.createElement('div');
                     card.className = "gallery-card";
                     card.innerHTML = `
@@ -677,7 +673,6 @@
             adminDashboard.style.display = "flex";
         }
 
-        // Launches isolated print target safely from any external platform device link
         function printSingleCard(imgUrl) {
             const printWindow = window.open('', '_blank');
             if (!printWindow) return;
@@ -706,8 +701,8 @@
         }
 
         function clearPrintQueue() {
-            if(confirm("Are you sure you want to clear the print counter and delete all saved session cache strips? Make sure you have downloaded any files you need first!")) {
-                localStorage.removeItem('boothPrintQueue');
+            if(confirm("Are you sure you want to clear the print counter and reset the session queue? Make sure you printed what you need first!")) {
+                livePrintQueueMemory = [];
                 openAdminDashboard(); 
             }
         }
