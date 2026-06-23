@@ -164,7 +164,6 @@
             justify-content: center;
         }
 
-        /* 👑 STYLED VISIBLE DOWNLOAD BUTTON */
         .action-btn {
             background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
             border: 3px solid #fff;
@@ -203,6 +202,29 @@
             border-radius: 4px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             background: white;
+            cursor: zoom-in; /* 🔍 Subtle hint that it can be clicked/expanded */
+        }
+
+        /* 👑 GIANT ZOOM MODAL OVERLAY */
+        .zoom-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        }
+
+        #zoomedImage {
+            max-height: 95vh;
+            max-width: 95vw;
+            border: 8px solid white;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            object-fit: contain;
         }
 
         #hiddenStitchCanvas, #hiddenPreviewCanvas { display: none; }
@@ -249,9 +271,9 @@
             <div id="flashLayer"></div>
 
             <div class="print-overlay-box" id="printZone">
-                <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview">
+                <!-- Tapping this opens the zoom gallery -->
+                <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview" onclick="openZoomView()">
                 <div class="print-sidebar-actions">
-                    <!-- 👑 Visible Download Button restored for reviewing pictures before hitting save -->
                     <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png">💾 Save Photo Strip</a>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player!</button>
                 </div>
@@ -275,6 +297,11 @@
 
     </div>
 
+    <!-- 👑 FULL SCREEN ZOOM LIGHTBOX CONTAINER -->
+    <div class="zoom-overlay" id="zoomLightbox" onclick="closeZoomView()">
+        <img id="zoomedImage" alt="Zoomed Photo Strip View">
+    </div>
+
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
     <canvas id="hiddenPreviewCanvas" width="800" height="1200"></canvas>
 
@@ -294,6 +321,8 @@
         const countdownDiv = document.getElementById('countdown');
         const flashLayer = document.getElementById('flashLayer');
         const printZone = document.getElementById('printZone');
+        const zoomLightbox = document.getElementById('zoomLightbox');
+        const zoomedImage = document.getElementById('zoomedImage');
 
         let currentFrame = 'birthday';
         let capturedFrames = [];
@@ -370,7 +399,7 @@
             statusFeedback.innerText = "Processing strips...";
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Strips ready to preview!";
+            statusFeedback.innerText = "Strips ready to preview! Tap image to zoom.";
             snapBtn.disabled = false;
         }
 
@@ -483,14 +512,26 @@
             previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 4, 30, 392, 1140);
             previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 404, 30, 392, 1140);
 
-            iosPrintTarget.src = hiddenPreviewCanvas.toDataURL('image/png');
+            const uprightPreviewUrl = hiddenPreviewCanvas.toDataURL('image/png');
+            iosPrintTarget.src = uprightPreviewUrl;
+            zoomedImage.src = uprightPreviewUrl; // Feed the same high-res upright preview to the zoom viewer
 
             printZone.style.display = 'flex'; 
+        }
+
+        // 👑 ZOOM CONTROLS
+        function openZoomView() {
+            zoomLightbox.style.display = 'flex';
+        }
+
+        function closeZoomView() {
+            zoomLightbox.style.display = 'none';
         }
         
         function closePrintZone() {
             printZone.style.display = 'none';
             iosPrintTarget.src = "";
+            zoomedImage.src = "";
             downloadLink.href = "#";
             statusFeedback.innerText = "Ready for the next match!";
         }
