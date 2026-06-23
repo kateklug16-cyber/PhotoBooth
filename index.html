@@ -291,7 +291,56 @@
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* FIX: Force hidden rendering engines to stay completely invisible */
+        .kids-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 150;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .kids-preview-content {
+            background: linear-gradient(135deg, #1e5a38 0%, #0d2619 100%);
+            border: 6px solid var(--gold);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .kids-preview-content h2 {
+            margin: 0;
+            color: var(--gold);
+            font-size: 2rem;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .kids-strip-img {
+            max-height: 65vh;
+            width: auto;
+            border: 4px solid white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .auto-close-timer {
+            font-family: sans-serif;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(0,0,0,0.4);
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+
         #hiddenStitchCanvas, #hiddenPreviewCanvas {
             display: none !important;
         }
@@ -331,6 +380,16 @@
         <button class="admin-btn" onclick="openAdminDashboard()">⚙️ Open Print Queue Manager</button>
     </div>
 
+    <!-- QUICK AUTO-PREVIEW POPUP FOR KIDS -->
+    <div class="kids-preview-modal" id="kidsPreviewModal">
+        <div class="kids-preview-content">
+            <h2>🔥 AWESOME JOB! HERE IS YOUR STRIP! 🔥</h2>
+            <img class="kids-strip-img" id="kidsPreviewImg" src="" alt="Your Strip Preview">
+            <div class="auto-close-timer" id="autoCloseText">Next team up in 20...</div>
+        </div>
+    </div>
+
+    <!-- BACKEND ADMIN DASHBOARD -->
     <div class="admin-dashboard" id="adminDashboard">
         <div class="admin-header">
             <div class="admin-title">🖨️ Print Queue Master Dashboard</div>
@@ -342,7 +401,6 @@
         <div class="gallery-grid" id="galleryGrid"></div>
     </div>
 
-    <!-- Background layout engines -->
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
     <canvas id="hiddenPreviewCanvas" width="800" height="1200"></canvas>
 
@@ -361,6 +419,10 @@
         const flashLayer = document.getElementById('flashLayer');
         const adminDashboard = document.getElementById('adminDashboard');
         const galleryGrid = document.getElementById('galleryGrid');
+
+        const kidsPreviewModal = document.getElementById('kidsPreviewModal');
+        const kidsPreviewImg = document.getElementById('kidsPreviewImg');
+        const autoCloseText = document.getElementById('autoCloseText');
 
         let currentFrame = 'birthday';
         let capturedFrames = [];
@@ -443,7 +505,7 @@
             generateTwin4x6Sheet();
             queuePrintJob();
             
-            snapBtn.disabled = false;
+            showKidsQuickPreview();
         }
 
         function takeSinglePhoto(photoNumber) {
@@ -559,14 +621,33 @@
                 printImg: masterPrintDataUrl,
                 previewImg: previewDataUrl
             });
+            updateQueueStatus();
+        }
 
-            statusFeedback.innerText = "📟 Strip saved to queue! Ready for next team!";
+        // UPDATED: Now runs on a 20-second countdown loop
+        function showKidsQuickPreview() {
+            kidsPreviewImg.src = previewDataUrl;
+            kidsPreviewModal.style.display = "flex";
             
-            setTimeout(() => {
-                masterPrintDataUrl = "";
-                previewDataUrl = "";
-                updateQueueStatus();
-            }, 3000);
+            let timeLeft = 20; 
+            autoCloseText.innerText = `Next team up in ${timeLeft}...`;
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    autoCloseText.innerText = `Next team up in ${timeLeft}...`;
+                } else {
+                    clearInterval(countdown);
+                    kidsPreviewModal.style.display = "none";
+                    kidsPreviewImg.src = ""; 
+                    
+                    masterPrintDataUrl = "";
+                    previewDataUrl = "";
+                    
+                    snapBtn.disabled = false;
+                    updateQueueStatus();
+                }
+            }, 1000);
         }
 
         function updateQueueStatus() {
