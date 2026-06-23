@@ -12,6 +12,7 @@
             --white: #ffffff;
             --booth-red: #e74c3c;
             --print-blue: #3498db;
+            --green-action: #2ecc71;
         }
 
         body {
@@ -159,7 +160,7 @@
         .print-sidebar-actions {
             display: flex;
             flex-direction: row;
-            gap: 15px;
+            gap: 10px;
             width: 100%;
             justify-content: center;
         }
@@ -168,8 +169,8 @@
             background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
             border: 3px solid #fff;
             color: white;
-            padding: 12px 25px;
-            font-size: 1.2rem;
+            padding: 10px 15px;
+            font-size: 1.05rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 10px;
@@ -181,12 +182,16 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        .action-btn.print-trigger {
+            background: linear-gradient(180deg, var(--green-action) 0%, #27ae60 100%);
+        }
+
         .reset-btn {
             background: #7f8c8d;
             border: 3px solid #fff;
             color: white;
-            padding: 12px 20px;
-            font-size: 1.1rem;
+            padding: 10px 15px;
+            font-size: 1.05rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 10px;
@@ -202,10 +207,9 @@
             border-radius: 4px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             background: white;
-            cursor: zoom-in; /* 🔍 Subtle hint that it can be clicked/expanded */
+            cursor: zoom-in;
         }
 
-        /* 👑 GIANT ZOOM MODAL OVERLAY */
         .zoom-overlay {
             display: none;
             position: fixed;
@@ -271,11 +275,11 @@
             <div id="flashLayer"></div>
 
             <div class="print-overlay-box" id="printZone">
-                <!-- Tapping this opens the zoom gallery -->
                 <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview" onclick="openZoomView()">
                 <div class="print-sidebar-actions">
-                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png">💾 Save Photo Strip</a>
-                    <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player!</button>
+                    <button class="action-btn print-trigger" onclick="printTargetSheet()">🖨️ Print Strip</button>
+                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png">💾 Save</a>
+                    <button class="reset-btn" onclick="closePrintZone()">⚽ Next!</button>
                 </div>
             </div>
         </div>
@@ -297,7 +301,6 @@
 
     </div>
 
-    <!-- 👑 FULL SCREEN ZOOM LIGHTBOX CONTAINER -->
     <div class="zoom-overlay" id="zoomLightbox" onclick="closeZoomView()">
         <img id="zoomedImage" alt="Zoomed Photo Strip View">
     </div>
@@ -482,11 +485,10 @@
 
         function generateTwin4x6Sheet() {
             const singleStripElement = buildSingleStrip();
-
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. LANDSCAPE FILE GENERATION FOR THE SAVE FILE
+            // 1. LANDSCAPE FILE GENERATION
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -505,7 +507,7 @@
             const printerDataUrl = hiddenStitchCanvas.toDataURL('image/png');
             downloadLink.href = printerDataUrl;
 
-            // 2. PORTRAIT PREVIEW GENERATION FOR THE SCREEN DISPLAY
+            // 2. PORTRAIT PREVIEW GENERATION
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
@@ -514,12 +516,40 @@
 
             const uprightPreviewUrl = hiddenPreviewCanvas.toDataURL('image/png');
             iosPrintTarget.src = uprightPreviewUrl;
-            zoomedImage.src = uprightPreviewUrl; // Feed the same high-res upright preview to the zoom viewer
+            zoomedImage.src = uprightPreviewUrl; 
 
             printZone.style.display = 'flex'; 
         }
 
-        // 👑 ZOOM CONTROLS
+        // 🖨️ DIRECT APP PRINTING LOGIC
+        function printTargetSheet() {
+            const imgDataUrl = hiddenStitchCanvas.toDataURL('image/png');
+            
+            // Create a clean, isolated printing window context
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                statusFeedback.innerText = "⚠️ Print pop-up blocked! Please check settings.";
+                return;
+            }
+
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Print Photo Strip</title>
+                    <style>
+                        @page { size: landscape; margin: 0; }
+                        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: #fff; min-height: 100vh; }
+                        img { max-width: 100%; max-height: 100%; object-fit: contain; page-break-inside: avoid; }
+                    </style>
+                </head>
+                <body>
+                    <img src="${imgDataUrl}" onload="window.print(); setTimeout(function(){ window.close(); }, 500);">
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
         function openZoomView() {
             zoomLightbox.style.display = 'flex';
         }
