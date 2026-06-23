@@ -278,7 +278,7 @@
                 <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview" onclick="openZoomView()">
                 <div class="print-sidebar-actions">
                     <button class="action-btn print-trigger" onclick="printTargetSheet()">🖨️ Print Strip</button>
-                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png">💾 Save</a>
+                    <a id="downloadLink" style="display: none;" download="fitz-birthday-strip.png"></a>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Next!</button>
                 </div>
             </div>
@@ -399,10 +399,10 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing strips...";
+            statusFeedback.innerText = "Processing strips & auto-saving file...";
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Strips ready to preview! Tap image to zoom.";
+            statusFeedback.innerText = "Saved! Ready to preview / print.";
             snapBtn.disabled = false;
         }
 
@@ -488,7 +488,7 @@
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. LANDSCAPE FILE GENERATION
+            // 1. LANDSCAPE MASTER PRINT FILE CANVAS
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -507,7 +507,7 @@
             const printerDataUrl = hiddenStitchCanvas.toDataURL('image/png');
             downloadLink.href = printerDataUrl;
 
-            // 2. PORTRAIT PREVIEW GENERATION
+            // 2. PORTRAIT PREVIEW CANVAS
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
@@ -519,16 +519,19 @@
             zoomedImage.src = uprightPreviewUrl; 
 
             printZone.style.display = 'flex'; 
+
+            // 🚀 AUTOMATIC SAVE BACKGROUND TRIGGER (Executes instantly)
+            setTimeout(() => {
+                downloadLink.click();
+            }, 100);
         }
 
-        // 🖨️ DIRECT APP PRINTING LOGIC
+        // 🖨️ STRICT ONE-PAGE FIX FOR PRINT ROUTINE
         function printTargetSheet() {
             const imgDataUrl = hiddenStitchCanvas.toDataURL('image/png');
-            
-            // Create a clean, isolated printing window context
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                statusFeedback.innerText = "⚠️ Print pop-up blocked! Please check settings.";
+                statusFeedback.innerText = "⚠️ Print pop-up blocked! Please check browser permissions.";
                 return;
             }
 
@@ -537,13 +540,15 @@
                 <head>
                     <title>Print Photo Strip</title>
                     <style>
-                        @page { size: landscape; margin: 0; }
-                        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; background: #fff; min-height: 100vh; }
-                        img { max-width: 100%; max-height: 100%; object-fit: contain; page-break-inside: avoid; }
+                        /* Strict rules to isolate the print layout and eliminate multi-page bleeding */
+                        @page { size: 6in 4in landscape; margin: 0; }
+                        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #fff; }
+                        body { display: flex; justify-content: center; align-items: center; }
+                        img { width: 100%; height: 100%; object-fit: contain; display: block; page-break-inside: avoid; page-break-after: avoid; }
                     </style>
                 </head>
                 <body>
-                    <img src="${imgDataUrl}" onload="window.print(); setTimeout(function(){ window.close(); }, 500);">
+                    <img src="${imgDataUrl}" onload="setTimeout(function(){ window.print(); window.close(); }, 300);">
                 </body>
                 </html>
             `);
