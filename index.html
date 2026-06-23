@@ -141,9 +141,8 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        /* PRINT CONTROL BUTTON UI */
         .print-container {
-            display: none; /* Hidden until a photo strip is made */
+            display: none; 
             flex-direction: column;
             align-items: center;
             width: 100%;
@@ -238,10 +237,6 @@
         #helpBox button { background: #333; color: #fff; border: 0; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         #helpOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
 
-        /* ========================================================
-           🖨️ CRITICAL CSS PRINT MEDIA QUERY 
-           Hides the whole app and ONLY sends the final image to printer
-           ======================================================== */
         @media print {
             body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .help-btn, #helpBox, #helpOverlay, .section-title, .print-btn {
                 display: none !important;
@@ -312,8 +307,8 @@
         <h4>🔒 Camera Permission Fixes</h4>
         <p>Browsers block local cameras when opening files directly. Try these steps:</p>
         <ol>
-            <li>Look at the very left edge of your browser's address bar. Click the <strong>Lock 🔒 or Camera 🎥 icon</strong> and set to <strong>"Allow"</strong>.</li>
-            <li><strong>Incognito Mode:</strong> Open an incognito window and drag-and-drop this file right into it.</li>
+            <li>Look at the address bar, click the <strong>Lock 🔒 icon</strong> and set Camera to <strong>"Allow"</strong>.</li>
+            <li><strong>Incognito Mode:</strong> Drag-and-drop this file into a private window.</li>
         </ol>
         <button onclick="toggleHelp(false)">Got It!</button>
     </div>
@@ -422,14 +417,14 @@
                 return;
             }
             snapBtn.disabled = true;
-            printZone.style.display = 'none'; // Hide old preview while snapping new ones
+            printZone.style.display = 'none'; 
             capturedFrames = [];
 
             await takeSinglePhoto(1);
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing your custom birthday strip...";
+            statusFeedback.innerText = "Saving backup & generating strip...";
             generateFinalStrip();
             
             statusFeedback.innerText = "Ready to print!";
@@ -486,50 +481,4 @@
                 stitchCtx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
                 
                 stitchCtx.strokeStyle = "#111111";
-                stitchCtx.lineWidth = 4;
-                stitchCtx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
-            });
-
-            stitchCtx.fillStyle = "#222222";
-            stitchCtx.textAlign = "center";
-            stitchCtx.font = "bold 26px Impact, sans-serif";
-            stitchCtx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
-            stitchCtx.font = "20px Impact, sans-serif";
-            stitchCtx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
-
-            stitchCtx.fillStyle = "#1e5a38"; 
-            stitchCtx.fillRect(0, totalH - footerH, stripW, footerH);
-            
-            stitchCtx.fillStyle = "#f1c40f";
-            stitchCtx.fillRect(0, totalH - footerH, stripW, 5);
-
-            stitchCtx.fillStyle = "#ffffff";
-            stitchCtx.strokeStyle = "#000000";
-            stitchCtx.lineWidth = 4;
-            stitchCtx.textAlign = "center";
-            stitchCtx.font = "bold 24px Impact, sans-serif";
-            
-            stitchCtx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-            stitchCtx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-
-            // Output to the printing image source element
-            const dataUrl = stitchCanvas.toDataURL('image/png');
-            printPreviewImg.src = dataUrl;
-            printZone.style.display = 'flex'; // Pop open print preview menu
-        }
-
-        // Native Browser Print Execution Call
-        function triggerPrinter() {
-            window.print();
-        }
-
-        function toggleHelp(show) {
-            const displayState = show ? 'block' : 'none';
-            document.getElementById('helpBox').style.display = displayState;
-            document.getElementById('helpOverlay').style.display = displayState;
-        }
-
-        window.addEventListener('DOMContentLoaded', startCamera);
-    </script>
-</body>
-</html>
+                stitchCtx.lineWidth
