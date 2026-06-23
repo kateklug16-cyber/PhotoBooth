@@ -11,7 +11,6 @@
             --gold: #f1c40f;
             --white: #ffffff;
             --booth-red: #e74c3c;
-            --print-blue: #3498db;
             --green-action: #2ecc71;
         }
 
@@ -160,41 +159,37 @@
         .print-sidebar-actions {
             display: flex;
             flex-direction: row;
-            gap: 10px;
+            gap: 15px;
             width: 100%;
             justify-content: center;
         }
 
         .action-btn {
-            background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
+            background: linear-gradient(180deg, var(--green-action) 0%, #27ae60 100%);
             border: 3px solid #fff;
             color: white;
-            padding: 10px 15px;
-            font-size: 1.05rem;
+            padding: 12px 30px;
+            font-size: 1.25rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
             text-decoration: none;
             display: inline-block;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .action-btn.print-trigger {
-            background: linear-gradient(180deg, var(--green-action) 0%, #27ae60 100%);
-        }
-
         .reset-btn {
             background: #7f8c8d;
             border: 3px solid #fff;
             color: white;
-            padding: 10px 15px;
-            font-size: 1.05rem;
+            padding: 12px 20px;
+            font-size: 1.25rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
@@ -277,9 +272,8 @@
             <div class="print-overlay-box" id="printZone">
                 <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview" onclick="openZoomView()">
                 <div class="print-sidebar-actions">
-                    <button class="action-btn print-trigger" onclick="printTargetSheet()">🖨️ Print Strip</button>
-                    <a id="downloadLink" style="display: none;" download="fitz-birthday-strip.png"></a>
-                    <button class="reset-btn" onclick="closePrintZone()">⚽ Next!</button>
+                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png" onclick="simulatePrinting()">🖨️ Print Strip</a>
+                    <button class="reset-btn" onclick="closePrintZone()">⚽ Back</button>
                 </div>
             </div>
         </div>
@@ -399,10 +393,10 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing strips & auto-saving file...";
+            statusFeedback.innerText = "Processing strips...";
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Saved! Ready to preview / print.";
+            statusFeedback.innerText = "Strips ready to preview! Tap image to zoom.";
             snapBtn.disabled = false;
         }
 
@@ -488,7 +482,7 @@
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. LANDSCAPE MASTER PRINT FILE CANVAS
+            // 1. LANDSCAPE MASTER FILE GENERATION (Forces the correct 4x6 save layout)
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -504,10 +498,11 @@
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
+            // Link the canvas download data directly into the Print button
             const printerDataUrl = hiddenStitchCanvas.toDataURL('image/png');
             downloadLink.href = printerDataUrl;
 
-            // 2. PORTRAIT PREVIEW CANVAS
+            // 2. PORTRAIT PREVIEW GENERATION
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
@@ -519,40 +514,16 @@
             zoomedImage.src = uprightPreviewUrl; 
 
             printZone.style.display = 'flex'; 
-
-            // 🚀 AUTOMATIC SAVE BACKGROUND TRIGGER (Executes instantly)
-            setTimeout(() => {
-                downloadLink.click();
-            }, 100);
         }
 
-        // 🖨️ STRICT ONE-PAGE FIX FOR PRINT ROUTINE
-        function printTargetSheet() {
-            const imgDataUrl = hiddenStitchCanvas.toDataURL('image/png');
-            const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-                statusFeedback.innerText = "⚠️ Print pop-up blocked! Please check browser permissions.";
-                return;
-            }
-
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Print Photo Strip</title>
-                    <style>
-                        /* Strict rules to isolate the print layout and eliminate multi-page bleeding */
-                        @page { size: 6in 4in landscape; margin: 0; }
-                        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #fff; }
-                        body { display: flex; justify-content: center; align-items: center; }
-                        img { width: 100%; height: 100%; object-fit: contain; display: block; page-break-inside: avoid; page-break-after: avoid; }
-                    </style>
-                </head>
-                <body>
-                    <img src="${imgDataUrl}" onload="setTimeout(function(){ window.print(); window.close(); }, 300);">
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
+        // 👑 FUN FAKE PRINT ROUTINE FOR THE KIDS
+        function simulatePrinting() {
+            statusFeedback.innerText = "📟 Sending sheet to the printer...";
+            
+            // Give them a brief moment to watch the fun status update before resetting the loop
+            setTimeout(() => {
+                closePrintZone();
+            }, 2000);
         }
 
         function openZoomView() {
@@ -567,7 +538,6 @@
             printZone.style.display = 'none';
             iosPrintTarget.src = "";
             zoomedImage.src = "";
-            downloadLink.href = "#";
             statusFeedback.innerText = "Ready for the next match!";
         }
 
