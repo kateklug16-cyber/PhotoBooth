@@ -560,25 +560,31 @@
                 ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
             });
 
-            // FIXED: Centered text alignment, adjusted Y coordinate, and optimized font size to prevent clipping
+            // --- TWO-LINE TOP HEADER (SAFARI & DESKTOP ALIGNED) ---
             ctx.fillStyle = "#222222";
             ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.font = "bold 19px 'Impact', sans-serif";
-            ctx.fillText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, 65);
+            
+            // Line 1: Main title text centered perfectly
+            ctx.font = "bold 22px 'Impact', sans-serif";
+            ctx.fillText("World Cup Photo Booth", stripW / 2, 42);
 
-            // Bottom background section remains Athletic Blue
+            // Line 2: Flag emojis centered directly underneath using standard font width calculations
+            ctx.font = "18px 'Arial', sans-serif"; 
+            ctx.fillText("🇺🇸  🇨🇦  🇲🇽", stripW / 2, 76);
+
+
+            // --- BOTTOM FOOTER BLOCK ---
             ctx.fillStyle = "#0f4c81"; 
             ctx.fillRect(0, totalH - footerH, stripW, footerH);
             ctx.fillStyle = "#f1c40f"; // Gold divider bar
             ctx.fillRect(0, totalH - footerH, stripW, 5);
 
-            // Footer text remains centered birthday message
+            // Centered birthday text
             ctx.fillStyle = "#ffffff";
             ctx.strokeStyle = "#000000";
             ctx.lineWidth = 4;
             ctx.textAlign = "center";
-            ctx.textBaseline = "alphabetic"; // Reset to standard baseline for footer
+            ctx.textBaseline = "alphabetic"; 
             ctx.font = "bold 24px 'Impact', sans-serif";
             ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
             ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
