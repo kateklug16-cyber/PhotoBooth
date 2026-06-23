@@ -164,23 +164,40 @@
             justify-content: center;
         }
 
-        .reset-btn {
-            background: var(--print-blue);
+        /* 👑 STYLED VISIBLE DOWNLOAD BUTTON */
+        .action-btn {
+            background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
             border: 3px solid #fff;
             color: white;
-            padding: 12px 30px;
-            font-size: 1.3rem;
+            padding: 12px 25px;
+            font-size: 1.2rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 10px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* 📱 SCREEN PREVIEW (Forces upright display context) */
+        .reset-btn {
+            background: #7f8c8d;
+            border: 3px solid #fff;
+            color: white;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+            border-radius: 10px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         #iosPrintTarget {
             display: block;
-            max-height: 350px; 
+            max-height: 330px; 
             width: auto;
             border: 5px solid white;
             border-radius: 4px;
@@ -188,7 +205,6 @@
             background: white;
         }
 
-        /* Keep rendering layers tucked away safely */
         #hiddenStitchCanvas, #hiddenPreviewCanvas { display: none; }
 
         #statusFeedback {
@@ -235,7 +251,8 @@
             <div class="print-overlay-box" id="printZone">
                 <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview">
                 <div class="print-sidebar-actions">
-                    <a id="downloadLink" style="display: none;" download="fitz-birthday-strip.png"></a>
+                    <!-- 👑 Visible Download Button restored for reviewing pictures before hitting save -->
+                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png">💾 Save Photo Strip</a>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player!</button>
                 </div>
             </div>
@@ -258,9 +275,7 @@
 
     </div>
 
-    <!-- 📥 Hidden Landscape Construction Canvas (1200x800 for the file save) -->
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
-    <!-- 👀 Hidden Portrait Preview Canvas (800x1200 for correct screen display) -->
     <canvas id="hiddenPreviewCanvas" width="800" height="1200"></canvas>
 
     <script>
@@ -352,10 +367,10 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing strips & auto-saving...";
+            statusFeedback.innerText = "Processing strips...";
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Saved! Ready for next player.";
+            statusFeedback.innerText = "Strips ready to preview!";
             snapBtn.disabled = false;
         }
 
@@ -391,7 +406,7 @@
         function buildSingleStrip() {
             const stripW = 360;  
             const targetPhotoH = 270; 
-            const gap = 16; // 📈 Expanded spacing slightly for elegant framing padding
+            const gap = 16; 
             const headerH = 100; 
             const footerH = 90;  
             const totalH = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
@@ -442,46 +457,35 @@
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. 💾 GENERATE LANDSCAPE MASTER FILE (FOR BACKGROUND SAVE)
+            // 1. LANDSCAPE FILE GENERATION FOR THE SAVE FILE
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
-            // Print Strip 1 (Top Landscape Half)
             stitchCtx.save();
             stitchCtx.translate(600, 200); 
             stitchCtx.rotate(-90 * Math.PI / 180); 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            // Print Strip 2 (Bottom Landscape Half)
             stitchCtx.save();
             stitchCtx.translate(600, 600); 
             stitchCtx.rotate(-90 * Math.PI / 180); 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            // Capture the printer-ready rotated URL
             const printerDataUrl = hiddenStitchCanvas.toDataURL('image/png');
             downloadLink.href = printerDataUrl;
 
-            // 2. 👀 GENERATE UPRIGHT PORTRAIT RENDER (FOR POPUP SCREEN DISPLAY ONLY)
+            // 2. PORTRAIT PREVIEW GENERATION FOR THE SCREEN DISPLAY
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
-            // Render Left Strip (Upright)
             previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 4, 30, 392, 1140);
-            // Render Right Strip (Upright)
             previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 404, 30, 392, 1140);
 
-            // Feed the upright graphic into the image preview box
             iosPrintTarget.src = hiddenPreviewCanvas.toDataURL('image/png');
 
             printZone.style.display = 'flex'; 
-
-            // 🚀 AUTOMATIC SAVE TRIGGER (Saves printer layout natively)
-            setTimeout(() => {
-                downloadLink.click();
-            }, 100);
         }
         
         function closePrintZone() {
