@@ -11,6 +11,7 @@
             --gold: #f1c40f;
             --white: #ffffff;
             --booth-red: #e74c3c;
+            --print-blue: #3498db;
         }
 
         body {
@@ -140,6 +141,42 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
+        /* PRINT CONTROL BUTTON UI */
+        .print-container {
+            display: none; /* Hidden until a photo strip is made */
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-top: 15px;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px dashed var(--gold);
+        }
+
+        .print-btn {
+            background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
+            border: 4px solid #fff;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-family: 'Impact', sans-serif;
+            text-transform: uppercase;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+            margin-bottom: 15px;
+        }
+        .print-btn:active { transform: scale(0.95); }
+
+        #printPreviewImg {
+            height: 380px;
+            width: auto;
+            border: 5px solid white;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
         .help-btn {
             background: #34495e;
             color: white;
@@ -180,32 +217,6 @@
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-        .filmstrip-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            margin-top: 10px;
-        }
-        #galleryStrip {
-            display: flex;
-            gap: 15px;
-            max-width: 90vw;
-            overflow-x: auto;
-            padding: 10px;
-        }
-        
-        .captured-strip {
-            height: 420px; 
-            width: auto;
-            border: 5px solid #fff;
-            border-radius: 6px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.5);
-            transition: transform 0.2s;
-            cursor: pointer;
-        }
-        .captured-strip:hover { transform: scale(1.05); }
-
         #stitchCanvas { display: none; }
 
         #helpBox {
@@ -226,6 +237,36 @@
         #helpBox h4 { margin-top: 0; font-family: 'Impact', sans-serif; font-size: 1.4rem; color: var(--booth-red); letter-spacing: 1px;}
         #helpBox button { background: #333; color: #fff; border: 0; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;}
         #helpOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 99; }
+
+        /* ========================================================
+           🖨️ CRITICAL CSS PRINT MEDIA QUERY 
+           Hides the whole app and ONLY sends the final image to printer
+           ======================================================== */
+        @media print {
+            body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .help-btn, #helpBox, #helpOverlay, .section-title, .print-btn {
+                display: none !important;
+                background: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .print-container {
+                display: block !important;
+                background: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                position: absolute;
+                top: 0; left: 0;
+            }
+            #printPreviewImg {
+                max-height: 100vh !important;
+                width: auto !important;
+                border: none !important;
+                box-shadow: none !important;
+                page-break-after: avoid;
+                page-break-inside: avoid;
+            }
+        }
     </style>
 </head>
 <body>
@@ -259,9 +300,11 @@
 
     </div>
 
-    <div class="filmstrip-container">
-        <div class="section-title">🏅 Tap a strip below to Save/Download 🏅</div>
-        <div id="galleryStrip"></div>
+    <div class="print-container" id="printZone">
+        <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Your Strip! 🖨️</button>
+        <div>
+            <img id="printPreviewImg" src="" alt="Photo Strip Preview">
+        </div>
     </div>
 
     <div id="helpOverlay" onclick="toggleHelp(false)"></div>
@@ -269,9 +312,8 @@
         <h4>🔒 Camera Permission Fixes</h4>
         <p>Browsers block local cameras when opening files directly. Try these steps:</p>
         <ol>
-            <li>Look at the very left edge of your browser's address bar. Click the <strong>Lock 🔒 or Camera 🎥 icon</strong> next to the file path and change Camera to <strong>"Allow"</strong>.</li>
-            <li><strong>Incognito Mode:</strong> Open a private/incognito window and drag-and-drop this file right into it.</li>
-            <li>If using iPad, open the iPad main <strong>Settings > Safari > Camera</strong> and set it to <strong>"Allow"</strong>.</li>
+            <li>Look at the very left edge of your browser's address bar. Click the <strong>Lock 🔒 or Camera 🎥 icon</strong> and set to <strong>"Allow"</strong>.</li>
+            <li><strong>Incognito Mode:</strong> Open an incognito window and drag-and-drop this file right into it.</li>
         </ol>
         <button onclick="toggleHelp(false)">Got It!</button>
     </div>
@@ -289,12 +331,13 @@
         const statusFeedback = document.getElementById('statusFeedback');
         const countdownDiv = document.getElementById('countdown');
         const flashLayer = document.getElementById('flashLayer');
-        const galleryStrip = document.getElementById('galleryStrip');
+        
+        const printZone = document.getElementById('printZone');
+        const printPreviewImg = document.getElementById('printPreviewImg');
 
         let currentFrame = 'usa';
         let capturedFrames = [];
 
-        // Preload your 6 specific Image Assets
         const frames = {
             usa: new Image(),
             mexico: new Image(),
@@ -330,9 +373,6 @@
                 
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
-                video.setAttribute('playsinline', true);
-                video.setAttribute('webkit-playsinline', true);
-                
                 await video.play();
                 statusFeedback.innerText = "Stadium ready! Let's play!";
                 requestAnimationFrame(renderLoop);
@@ -345,7 +385,6 @@
         function renderLoop() {
             liveCtx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
 
-            // Mirror webcam view horizontally so it feels natural to frame yourself
             liveCtx.save();
             liveCtx.translate(liveCanvas.width, 0);
             liveCtx.scale(-1, 1);
@@ -358,12 +397,10 @@
             }
             liveCtx.restore();
 
-            // Overlay your custom transparent PNG image frame seamlessly
             const activeImage = frames[currentFrame];
             if (activeImage.complete && activeImage.naturalWidth !== 0) {
                 liveCtx.drawImage(activeImage, 0, 0, liveCanvas.width, liveCanvas.height);
             } else {
-                // Warning layout block text until you save the files into the folder
                 liveCtx.save();
                 liveCtx.fillStyle = "rgba(0, 0, 0, 0.7)";
                 liveCtx.fillRect(40, 200, liveCanvas.width - 80, 80);
@@ -385,16 +422,17 @@
                 return;
             }
             snapBtn.disabled = true;
+            printZone.style.display = 'none'; // Hide old preview while snapping new ones
             capturedFrames = [];
 
             await takeSinglePhoto(1);
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing your custom 2026 birthday strip...";
+            statusFeedback.innerText = "Processing your custom birthday strip...";
             generateFinalStrip();
             
-            statusFeedback.innerText = "Ready for the next match!";
+            statusFeedback.innerText = "Ready to print!";
             snapBtn.disabled = false;
         }
 
@@ -438,25 +476,20 @@
             stitchCanvas.height = totalH;
             stitchCanvas.width = stripW;
 
-            // Base Background fill (Clean white photo strip look)
             stitchCtx.fillStyle = "#ffffff";
             stitchCtx.fillRect(0, 0, stripW, totalH);
 
-            // Stitch the images vertically
             capturedFrames.forEach((img, index) => {
                 const yOffset = headerH + (index * (targetPhotoH + gap));
                 const photoW = stripW - 40; 
                 const photoX = 20;
-                
                 stitchCtx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
                 
-                // Photo borders
                 stitchCtx.strokeStyle = "#111111";
                 stitchCtx.lineWidth = 4;
                 stitchCtx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
             });
 
-            // Strip Header Decoration
             stitchCtx.fillStyle = "#222222";
             stitchCtx.textAlign = "center";
             stitchCtx.font = "bold 26px Impact, sans-serif";
@@ -464,38 +497,30 @@
             stitchCtx.font = "20px Impact, sans-serif";
             stitchCtx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
 
-            // CUSTOM FOOTER BANNER
             stitchCtx.fillStyle = "#1e5a38"; 
             stitchCtx.fillRect(0, totalH - footerH, stripW, footerH);
             
-            // Gold Banner Accent Line
             stitchCtx.fillStyle = "#f1c40f";
             stitchCtx.fillRect(0, totalH - footerH, stripW, 5);
 
-            // Render Text Layout onto Banner
             stitchCtx.fillStyle = "#ffffff";
             stitchCtx.strokeStyle = "#000000";
             stitchCtx.lineWidth = 4;
             stitchCtx.textAlign = "center";
             stitchCtx.font = "bold 24px Impact, sans-serif";
             
-            // Text Stroke & Fill
             stitchCtx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
             stitchCtx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
 
-            // Export to Interactive Gallery
+            // Output to the printing image source element
             const dataUrl = stitchCanvas.toDataURL('image/png');
-            
-            const fileLink = document.createElement('a');
-            fileLink.href = dataUrl;
-            fileLink.download = `fitz_birthday_strip_${Date.now()}.png`;
-            
-            const thumbnail = document.createElement('img');
-            thumbnail.src = dataUrl;
-            thumbnail.classList.add('captured-strip');
-            
-            fileLink.appendChild(thumbnail);
-            galleryStrip.insertBefore(fileLink, galleryStrip.firstChild);
+            printPreviewImg.src = dataUrl;
+            printZone.style.display = 'flex'; // Pop open print preview menu
+        }
+
+        // Native Browser Print Execution Call
+        function triggerPrinter() {
+            window.print();
         }
 
         function toggleHelp(show) {
