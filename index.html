@@ -193,7 +193,7 @@
             cursor: pointer;
         }
 
-        /* SCREEN PREVIEW CONSTRAINTS */
+        /* PREVIEW BOUNDS FOR MULTI-STRIP SHEET */
         #iosPrintTarget {
             display: block;
             max-height: 330px; 
@@ -247,6 +247,7 @@
             <div id="countdown">3</div>
             <div id="flashLayer"></div>
 
+            <!-- OVERLAY PREVIEW PANEL -->
             <div class="print-overlay-box" id="printZone">
                 
                 <img id="iosPrintTarget" alt="Twin 4x6 Photo Strip Sheet">
@@ -275,6 +276,7 @@
 
     </div>
 
+    <!-- The physical image layout is wide (1200x800) -->
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
 
     <script>
@@ -364,7 +366,7 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing double strip layout...";
+            statusFeedback.innerText = "Processing landscape-rotated layout...";
             generateTwin4x6Sheet();
             
             statusFeedback.innerText = "Strip compiled!";
@@ -451,27 +453,36 @@
         }
 
         function generateTwin4x6Sheet() {
+            // 📐 Clear background as landscape (1200 width x 800 height)
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
             const singleStripElement = buildSingleStrip();
 
-            const finalStripW = 247; 
-            const finalStripH = 740;
-            const topY = 30;
+            // Sizing constraints for drawing the strip sideways
+            const targetW = 740;
+            const targetH = 247;
 
-            const leftStripX = 345; 
-            const rightStripX = 597; 
+            // 🔄 STRIP 1 (TOP HALF - ROTATED HORIZONTALLY)
+            stitchCtx.save();
+            // Move pivot point to the middle of the top placement zone
+            stitchCtx.translate(600, 215); 
+            stitchCtx.rotate(-90 * Math.PI / 180); // Rotate 90 degrees counter-clockwise
+            // Draw the strip centered on our new rotated pivot point
+            stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
+            stitchCtx.restore();
 
-            stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, leftStripX, topY, finalStripW, finalStripH);
-            stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, rightStripX, topY, finalStripW, finalStripH);
+            // 🔄 STRIP 2 (BOTTOM HALF - ROTATED HORIZONTALLY)
+            stitchCtx.save();
+            // Move pivot point to the middle of the bottom placement zone
+            stitchCtx.translate(600, 585); 
+            stitchCtx.rotate(-90 * Math.PI / 180); 
+            stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
+            stitchCtx.restore();
 
             const finalDataUrl = hiddenStitchCanvas.toDataURL('image/png');
             
-            // Set source for visual on-screen preview
             iosPrintTarget.src = finalDataUrl;
-            
-            // 🌟 FORCE SAFARI DOWNLOAD HOOK
             downloadLink.href = finalDataUrl;
 
             printZone.style.display = 'flex'; 
