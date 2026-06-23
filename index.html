@@ -381,7 +381,6 @@
         <button class="admin-btn" onclick="openAdminDashboard()">⚙️ Open Print Queue Manager</button>
     </div>
 
-    <!-- QUICK AUTO-PREVIEW POPUP FOR KIDS -->
     <div class="kids-preview-modal" id="kidsPreviewModal">
         <div class="kids-preview-content">
             <h2>🔥 AWESOME JOB! HERE IS YOUR STRIP! 🔥</h2>
@@ -390,7 +389,6 @@
         </div>
     </div>
 
-    <!-- BACKEND ADMIN DASHBOARD -->
     <div class="admin-dashboard" id="adminDashboard">
         <div class="admin-header">
             <div class="admin-title">🖨️ Print Queue Master Dashboard</div>
@@ -562,11 +560,12 @@
                 ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
             });
 
-            // UPDATED: Header changed to the custom World Cup title with flags
+            // FIXED: Centered text alignment, adjusted Y coordinate, and optimized font size to prevent clipping
             ctx.fillStyle = "#222222";
             ctx.textAlign = "center";
-            ctx.font = "bold 23px Impact, sans-serif";
-            ctx.fillText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, 60);
+            ctx.textBaseline = "middle";
+            ctx.font = "bold 19px 'Impact', sans-serif";
+            ctx.fillText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, 65);
 
             // Bottom background section remains Athletic Blue
             ctx.fillStyle = "#0f4c81"; 
@@ -574,12 +573,13 @@
             ctx.fillStyle = "#f1c40f"; // Gold divider bar
             ctx.fillRect(0, totalH - footerH, stripW, 5);
 
-            // UPDATED: Footer text reverted back to centered birthday message
+            // Footer text remains centered birthday message
             ctx.fillStyle = "#ffffff";
             ctx.strokeStyle = "#000000";
             ctx.lineWidth = 4;
             ctx.textAlign = "center";
-            ctx.font = "bold 24px Impact, sans-serif";
+            ctx.textBaseline = "alphabetic"; // Reset to standard baseline for footer
+            ctx.font = "bold 24px 'Impact', sans-serif";
             ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
             ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
 
