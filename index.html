@@ -25,7 +25,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden; /* Prevents the iPad from scrolling around */
+            overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
         }
@@ -141,7 +141,7 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        /* 👑 POPUP OVERLAY FIX: Keeps everything perfectly visible on iPad screen */
+        /* 👑 POPUP OVERLAY PANEL */
         .print-overlay-box {
             display: none;
             position: absolute;
@@ -149,27 +149,42 @@
             width: 100%; height: 100%;
             background: rgba(13, 38, 25, 0.98);
             z-index: 30;
-            flex-direction: column; /* Changed to stacked so button is always at the bottom */
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 15px;
-            padding: 15px;
+            gap: 10px;
+            padding: 10px;
             box-sizing: border-box;
+        }
+
+        .instruction-tag {
+            color: var(--gold);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0px #000;
+            margin: 0;
+            text-align: center;
+            animation: pulseText 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulseText {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
 
         .print-sidebar-actions {
             display: flex;
-            flex-direction: row; /* Side-by-side buttons for quick access */
+            flex-direction: row;
             gap: 15px;
             width: 100%;
             justify-content: center;
         }
 
-        .print-btn {
+        .reset-btn {
             background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
             border: 3px solid #fff;
             color: white;
-            padding: 10px 25px;
+            padding: 12px 30px;
             font-size: 1.2rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
@@ -178,27 +193,21 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
-        .reset-btn {
-            background: #7f8c8d;
-            border: 2px solid #fff;
-            color: white;
-            padding: 10px 20px;
-            font-size: 1rem;
-            font-family: 'Impact', sans-serif;
-            text-transform: uppercase;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        /* 🪄 SCREEN PREVIEW CONSTRAINT: Fits safely inside the box frame */
-        #visiblePreviewCanvas {
-            max-height: 350px; /* Constrained height so it doesn't push elements off screen */
+        /* 🪄 REAL STANDARD IMAGE TAG: Fully touchable and saveable on iOS */
+        #iosPrintTarget {
+            display: block;
+            max-height: 340px; 
             width: auto;
-            border: 4px solid white;
+            border: 5px solid white;
             border-radius: 4px;
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             background: white;
+            -webkit-user-select: contain !important; /* Forces iOS to allow "Save Image" menu */
+            user-select: contain !important;
         }
+
+        /* Hidden internal canvas used just to stitch the graphics behind the scenes */
+        #hiddenStitchCanvas { display: none; }
 
         #statusFeedback {
             font-size: 1.1rem;
@@ -227,30 +236,6 @@
         }
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        /* Hidden full-scale element for printing output only */
-        #iosPrintTarget { display: none; }
-
-        /* ========================================================
-           🖨️ LANDSCAPE 4x6 AIRPRINT LAYOUT
-           ======================================================== */
-        @media print {
-            @page {
-                size: 6in 4in landscape;
-                margin: 0;
-            }
-            body, html, .booth-widescreen-layout, .right-sidebar-controls, h1, .booth-box, .print-overlay-box {
-                display: none !important;
-            }
-            #iosPrintTarget {
-                display: block !important;
-                position: absolute;
-                top: 0; left: 0;
-                width: 6in !important;
-                height: 4in !important;
-                margin: 0 !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -266,12 +251,12 @@
             <div id="flashLayer"></div>
 
             <div class="print-overlay-box" id="printZone">
-                <div>
-                    <canvas id="visiblePreviewCanvas" width="1200" height="800"></canvas>
-                </div>
+                <p class="instruction-tag">👉 Press & Hold Image To Save to iPad! 👈</p>
+                
+                <img id="iosPrintTarget" alt="Twin 4x6 Photo Strip Sheet">
+                
                 <div class="print-sidebar-actions">
-                    <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Twin Strips!</button>
-                    <button class="reset-btn" onclick="closePrintZone()">⚽ Take Another!</button>
+                    <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player Up!</button>
                 </div>
             </div>
         </div>
@@ -288,19 +273,19 @@
             </div>
 
             <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()">Take 3-Shot Strip!</button>
-            <div id="statusFeedback">Ready for the match!</div>
+            <div id="statusFeedback">Ready for action!</div>
         </div>
 
     </div>
 
-    <img id="iosPrintTarget" alt="Twin 4x6 Photo Strip Sheet">
+    <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
 
     <script>
         const video = document.getElementById('webcam');
         const liveCanvas = document.getElementById('boothCanvas');
         const liveCtx = liveCanvas.getContext('2d');
-        const visiblePreviewCanvas = document.getElementById('visiblePreviewCanvas');
-        const previewCtx = visiblePreviewCanvas.getContext('2d');
+        const hiddenStitchCanvas = document.getElementById('hiddenStitchCanvas');
+        const stitchCtx = hiddenStitchCanvas.getContext('2d');
         const iosPrintTarget = document.getElementById('iosPrintTarget');
         
         const snapBtn = document.getElementById('snapBtn');
@@ -343,7 +328,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
-                statusFeedback.innerText = "Ready for action!";
+                statusFeedback.innerText = "Ready for the match!";
                 requestAnimationFrame(renderLoop);
             } catch (err) {
                 statusFeedback.innerText = "⚠️ Camera blocked.";
@@ -381,10 +366,10 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Generating twin photo strips...";
+            statusFeedback.innerText = "Baking your double strip layout...";
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Ready to print!";
+            statusFeedback.innerText = "Strip ready!";
             snapBtn.disabled = false;
         }
 
@@ -468,39 +453,29 @@
         }
 
         function generateTwin4x6Sheet() {
-            const canvasW = 1200;
-            const canvasH = 800;
-            
-            visiblePreviewCanvas.width = canvasW;
-            visiblePreviewCanvas.height = canvasH;
-
-            previewCtx.fillStyle = "#ffffff"; 
-            previewCtx.fillRect(0, 0, canvasW, canvasH);
+            // Background layout sheet set to full size crisp print quality bounds
+            stitchCtx.fillStyle = "#ffffff"; 
+            stitchCtx.fillRect(0, 0, 1200, 800);
 
             const singleStripElement = buildSingleStrip();
 
-            // 📏 ALIGNMENT ADJUSTMENT: Scaled to fit exactly next to each other in the center 
             const finalStripW = 247; 
             const finalStripH = 740;
             const topY = 30;
 
-            // Brought them inward so they sit right next to each other perfectly
-            const leftStripX = 340; 
-            const rightStripX = 610; 
+            // 📐 SNUG COHESION POSITIONING: Placed side-by-side perfectly in the middle
+            const leftStripX = 345; 
+            const rightStripX = 597; // Sits snugly side-by-side with zero wasted space
 
-            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, leftStripX, topY, finalStripW, finalStripH);
-            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, rightStripX, topY, finalStripW, finalStripH);
+            stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, leftStripX, topY, finalStripW, finalStripH);
+            stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, rightStripX, topY, finalStripW, finalStripH);
 
-            // Export layout directly to the hidden print target image to bypass Safari limitations
-            const finalDataUrl = visiblePreviewCanvas.toDataURL('image/png');
+            // Turn the whole layout into a native image string
+            const finalDataUrl = hiddenStitchCanvas.toDataURL('image/png');
             iosPrintTarget.src = finalDataUrl;
 
+            // Display on screen!
             printZone.style.display = 'flex'; 
-        }
-
-        function triggerPrinter() { 
-            // Gives the iPad a moment to settle before initiating the print window
-            setTimeout(() => { window.print(); }, 100);
         }
         
         function closePrintZone() {
