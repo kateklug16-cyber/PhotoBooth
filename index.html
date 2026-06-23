@@ -25,13 +25,14 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow: hidden; /* Prevents the iPad from scrolling around */
             -webkit-user-select: none;
             user-select: none;
         }
 
         h1 {
             text-transform: uppercase;
-            font-size: 2.3rem;
+            font-size: 2.1rem;
             margin: 5px 0 15px 0;
             text-shadow: 3px 3px 0px #000;
             letter-spacing: 1px;
@@ -140,63 +141,62 @@
         .snap-btn:active { transform: scale(0.95); }
         .snap-btn:disabled { background: #7f8c8d; cursor: not-allowed; opacity: 0.7; }
 
-        /* OVERLAY CONTAINER */
+        /* 👑 POPUP OVERLAY FIX: Keeps everything perfectly visible on iPad screen */
         .print-overlay-box {
             display: none;
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(13, 38, 25, 0.97);
+            background: rgba(13, 38, 25, 0.98);
             z-index: 30;
-            flex-direction: row;
+            flex-direction: column; /* Changed to stacked so button is always at the bottom */
             align-items: center;
             justify-content: center;
-            gap: 35px;
-            padding: 20px;
+            gap: 15px;
+            padding: 15px;
             box-sizing: border-box;
         }
 
         .print-sidebar-actions {
             display: flex;
-            flex-direction: column;
+            flex-direction: row; /* Side-by-side buttons for quick access */
             gap: 15px;
-            width: 220px;
+            width: 100%;
+            justify-content: center;
         }
 
         .print-btn {
             background: linear-gradient(180deg, var(--print-blue) 0%, #2980b9 100%);
-            border: 4px solid #fff;
+            border: 3px solid #fff;
             color: white;
-            padding: 15px 20px;
-            font-size: 1.4rem;
+            padding: 10px 25px;
+            font-size: 1.2rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
         .reset-btn {
             background: #7f8c8d;
             border: 2px solid #fff;
             color: white;
-            padding: 10px 15px;
+            padding: 10px 20px;
             font-size: 1rem;
             font-family: 'Impact', sans-serif;
             text-transform: uppercase;
             border-radius: 8px;
             cursor: pointer;
-            text-align: center;
         }
 
-        /* Displays the 4x6 landscape layout correctly on screen */
+        /* 🪄 SCREEN PREVIEW CONSTRAINT: Fits safely inside the box frame */
         #visiblePreviewCanvas {
-            height: 440px;
+            max-height: 350px; /* Constrained height so it doesn't push elements off screen */
             width: auto;
-            border: 5px solid white;
+            border: 4px solid white;
             border-radius: 4px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             background: white;
         }
 
@@ -228,6 +228,7 @@
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
 
+        /* Hidden full-scale element for printing output only */
         #iosPrintTarget { display: none; }
 
         /* ========================================================
@@ -416,7 +417,6 @@
             });
         }
 
-        // Creates one vertical strip layout on a hidden canvas tag layout
         function buildSingleStrip() {
             const stripW = 360;  
             const targetPhotoH = 270; 
@@ -467,41 +467,40 @@
             return stripCanvas;
         }
 
-        // Bakes the single strip twice onto the visible layout canvas sheet
         function generateTwin4x6Sheet() {
             const canvasW = 1200;
             const canvasH = 800;
             
-            // Set up main target container canvas size parameters
             visiblePreviewCanvas.width = canvasW;
             visiblePreviewCanvas.height = canvasH;
 
-            // Draw clean background block down
             previewCtx.fillStyle = "#ffffff"; 
             previewCtx.fillRect(0, 0, canvasW, canvasH);
 
-            // Generate our underlying layout canvas 
             const singleStripElement = buildSingleStrip();
 
-            // Sizing measurements to fit perfectly on a 4x6 print paper layout area
+            // 📏 ALIGNMENT ADJUSTMENT: Scaled to fit exactly next to each other in the center 
             const finalStripW = 247; 
             const finalStripH = 740;
             const topY = 30;
 
-            // Draw the EXACT SAME strip twice (Left side & Right side)
-            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 240, topY, finalStripW, finalStripH);
-            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 710, topY, finalStripW, finalStripH);
+            // Brought them inward so they sit right next to each other perfectly
+            const leftStripX = 340; 
+            const rightStripX = 610; 
 
-            // Export to our hidden print image frame targeting iPad Safari permissions
+            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, leftStripX, topY, finalStripW, finalStripH);
+            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, rightStripX, topY, finalStripW, finalStripH);
+
+            // Export layout directly to the hidden print target image to bypass Safari limitations
             const finalDataUrl = visiblePreviewCanvas.toDataURL('image/png');
             iosPrintTarget.src = finalDataUrl;
 
-            // Show popup panel framework overlay
             printZone.style.display = 'flex'; 
         }
 
         function triggerPrinter() { 
-            setTimeout(() => { window.print(); }, 50);
+            // Gives the iPad a moment to settle before initiating the print window
+            setTimeout(() => { window.print(); }, 100);
         }
         
         function closePrintZone() {
