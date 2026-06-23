@@ -14,6 +14,7 @@
             --green-action: #2ecc71;
             --admin-gray: #34495e;
             --print-blue: #3498db;
+            --strip-blue: #0f4c81; /* Classic athletic blue for the footer */
         }
 
         body {
@@ -383,7 +384,7 @@
     <!-- QUICK AUTO-PREVIEW POPUP FOR KIDS -->
     <div class="kids-preview-modal" id="kidsPreviewModal">
         <div class="kids-preview-content">
-            <h2>🔥 Looking Good! HERE IS YOUR STRIP! 🔥</h2>
+            <h2>🔥 LOOKING GOOD! HERE IS YOUR STRIP! 🔥</h2>
             <img class="kids-strip-img" id="kidsPreviewImg" src="" alt="Your Strip Preview">
             <div class="auto-close-timer" id="autoCloseText">Next team up in 20...</div>
         </div>
@@ -569,18 +570,21 @@
             ctx.fillStyle = "#555555";
             ctx.fillText("PHOTO BOOTH", stripW / 2, 78);
 
-            ctx.fillStyle = "#1e5a38"; 
+            // CHANGED: Bottom background section changed from Green to Athletic Blue
+            ctx.fillStyle = "#0f4c81"; 
             ctx.fillRect(0, totalH - footerH, stripW, footerH);
-            ctx.fillStyle = "#f1c40f";
+            ctx.fillStyle = "#f1c40f"; // Gold divider bar
             ctx.fillRect(0, totalH - footerH, stripW, 5);
 
             ctx.fillStyle = "#ffffff";
             ctx.strokeStyle = "#000000";
             ctx.lineWidth = 4;
             ctx.textAlign = "center";
-            ctx.font = "bold 24px Impact, sans-serif";
-            ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-            ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            ctx.font = "bold 23px Impact, sans-serif";
+            
+            // CHANGED: Heading updated to custom World Cup name with regional flags
+            ctx.strokeText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, totalH - 36);
+            ctx.fillText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, totalH - 36);
 
             return stripCanvas;
         }
@@ -624,7 +628,6 @@
             updateQueueStatus();
         }
 
-        // UPDATED: Now runs on a 20-second countdown loop
         function showKidsQuickPreview() {
             kidsPreviewImg.src = previewDataUrl;
             kidsPreviewModal.style.display = "flex";
