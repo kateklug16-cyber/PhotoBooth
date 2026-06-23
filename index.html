@@ -175,8 +175,6 @@
             border-radius: 12px;
             cursor: pointer;
             box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-            text-decoration: none;
-            display: inline-block;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
         }
@@ -229,7 +227,7 @@
         #hiddenStitchCanvas, #hiddenPreviewCanvas { display: none; }
 
         #statusFeedback {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             color: var(--gold);
             text-shadow: 1px 1px 0 #000;
             min-height: 1.4em;
@@ -272,7 +270,7 @@
             <div class="print-overlay-box" id="printZone">
                 <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview" onclick="openZoomView()">
                 <div class="print-sidebar-actions">
-                    <a id="downloadLink" class="action-btn" download="fitz-birthday-strip.png" onclick="simulatePrinting()">🖨️ Print Strip</a>
+                    <button class="action-btn" onclick="sendPrintNotification()">🖨️ Print Strip</button>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Back</button>
                 </div>
             </div>
@@ -311,7 +309,6 @@
         const hiddenPreviewCanvas = document.getElementById('hiddenPreviewCanvas');
         const previewCtx = hiddenPreviewCanvas.getContext('2d');
         const iosPrintTarget = document.getElementById('iosPrintTarget');
-        const downloadLink = document.getElementById('downloadLink');
         
         const snapBtn = document.getElementById('snapBtn');
         const statusFeedback = document.getElementById('statusFeedback');
@@ -323,6 +320,7 @@
 
         let currentFrame = 'birthday';
         let capturedFrames = [];
+        let totalPrintQueue = 0; // Tracks overall prints requested
 
         const frames = {
             birthday: new Image(),
@@ -355,10 +353,10 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
-                statusFeedback.innerText = "Ready for the match!";
+                updateStatusText("Ready for the match!");
                 requestAnimationFrame(renderLoop);
             } catch (err) {
-                statusFeedback.innerText = "⚠️ Camera blocked.";
+                updateStatusText("⚠️ Camera blocked.");
                 console.error(err);
             }
         }
@@ -393,16 +391,15 @@
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Processing strips...";
+            updateStatusText("Processing strips...");
             generateTwin4x6Sheet();
             
-            statusFeedback.innerText = "Strips ready to preview! Tap image to zoom.";
             snapBtn.disabled = false;
         }
 
         function takeSinglePhoto(photoNumber) {
             return new Promise((resolve) => {
-                statusFeedback.innerText = `📸 Shot ${photoNumber} of 3 incoming!`;
+                updateStatusText(`📸 Shot ${photoNumber} of 3 incoming!`);
                 let currentCount = 3;
                 countdownDiv.innerText = currentCount;
                 countdownDiv.style.display = 'block';
@@ -482,7 +479,7 @@
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 1. LANDSCAPE MASTER FILE GENERATION (Forces the correct 4x6 save layout)
+            // 1. LANDSCAPE MASTER SHEET GENERATION
             stitchCtx.fillStyle = "#ffffff"; 
             stitchCtx.fillRect(0, 0, 1200, 800);
 
@@ -498,11 +495,10 @@
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            // Link the canvas download data directly into the Print button
-            const printerDataUrl = hiddenStitchCanvas.toDataURL('image/png');
-            downloadLink.href = printerDataUrl;
+            // Extract canvas payload
+            const finalSheetDataUrl = hiddenStitchCanvas.toDataURL('image/png');
 
-            // 2. PORTRAIT PREVIEW GENERATION
+            // 2. PORTRAIT VIEW PREVIEW GENERATION
             previewCtx.fillStyle = "#ffffff";
             previewCtx.fillRect(0, 0, 800, 1200);
 
@@ -514,16 +510,36 @@
             zoomedImage.src = uprightPreviewUrl; 
 
             printZone.style.display = 'flex'; 
+
+            // 🚀 INVISIBLE BACKGROUND AUTO-DOWNLOAD TRIGGER
+            // Executes flawlessly right here without requiring a visible link block
+            const hiddenAnchor = document.createElement('a');
+            hiddenAnchor.href = finalSheetDataUrl;
+            hiddenAnchor.download = `fitz-booth-${Date.now()}.png`; // Generates unique filenames so it won't overwrite old files
+            document.body.appendChild(hiddenAnchor);
+            hiddenAnchor.click();
+            document.body.removeChild(hiddenAnchor);
+            
+            updateStatusText("Saved automatically! Tap image to zoom.");
         }
 
-        // 👑 FUN FAKE PRINT ROUTINE FOR THE KIDS
-        function simulatePrinting() {
-            statusFeedback.innerText = "📟 Sending sheet to the printer...";
+        // 👑 HANDS-FREE NOTIFICATION ROUTINE
+        function sendPrintNotification() {
+            totalPrintQueue++;
             
-            // Give them a brief moment to watch the fun status update before resetting the loop
+            // Temporary overlay feedback text to charm the kids
+            const originalFeedback = statusFeedback.innerText;
+            updateStatusText("📟 Order Sent! Printing your strip now...");
+
+            // Reset booth after 2 seconds so the next kid can step up seamlessly
             setTimeout(() => {
                 closePrintZone();
+                updateStatusText(`Ready! (${totalPrintQueue} strips waiting in your Downloads folder to be printed)`);
             }, 2000);
+        }
+
+        function updateStatusText(msg) {
+            statusFeedback.innerText = msg;
         }
 
         function openZoomView() {
@@ -538,7 +554,6 @@
             printZone.style.display = 'none';
             iosPrintTarget.src = "";
             zoomedImage.src = "";
-            statusFeedback.innerText = "Ready for the next match!";
         }
 
         window.addEventListener('DOMContentLoaded', startCamera);
