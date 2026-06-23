@@ -16,7 +16,7 @@
 
         body {
             margin: 0;
-            padding: 40px 10px 15px 10px; /* 👑 Increased top padding for breathing room */
+            padding: 40px 10px 15px 10px; 
             box-sizing: border-box;
             background: radial-gradient(circle, #1e5a38 0%, var(--stadium-dark) 100%);
             font-family: 'Impact', 'Arial Black', sans-serif;
@@ -177,9 +177,10 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
+        /* 📱 SCREEN PREVIEW (Forces upright display context) */
         #iosPrintTarget {
             display: block;
-            max-height: 330px; 
+            max-height: 350px; 
             width: auto;
             border: 5px solid white;
             border-radius: 4px;
@@ -187,7 +188,8 @@
             background: white;
         }
 
-        #hiddenStitchCanvas { display: none; }
+        /* Keep rendering layers tucked away safely */
+        #hiddenStitchCanvas, #hiddenPreviewCanvas { display: none; }
 
         #statusFeedback {
             font-size: 1.05rem;
@@ -231,7 +233,7 @@
             <div id="flashLayer"></div>
 
             <div class="print-overlay-box" id="printZone">
-                <img id="iosPrintTarget" alt="Twin 4x6 Photo Strip Sheet">
+                <img id="iosPrintTarget" alt="Upright Twin Photo Strip Preview">
                 <div class="print-sidebar-actions">
                     <a id="downloadLink" style="display: none;" download="fitz-birthday-strip.png"></a>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Next Player!</button>
@@ -256,7 +258,10 @@
 
     </div>
 
+    <!-- 📥 Hidden Landscape Construction Canvas (1200x800 for the file save) -->
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
+    <!-- 👀 Hidden Portrait Preview Canvas (800x1200 for correct screen display) -->
+    <canvas id="hiddenPreviewCanvas" width="800" height="1200"></canvas>
 
     <script>
         const video = document.getElementById('webcam');
@@ -264,6 +269,8 @@
         const liveCtx = liveCanvas.getContext('2d');
         const hiddenStitchCanvas = document.getElementById('hiddenStitchCanvas');
         const stitchCtx = hiddenStitchCanvas.getContext('2d');
+        const hiddenPreviewCanvas = document.getElementById('hiddenPreviewCanvas');
+        const previewCtx = hiddenPreviewCanvas.getContext('2d');
         const iosPrintTarget = document.getElementById('iosPrintTarget');
         const downloadLink = document.getElementById('downloadLink');
         
@@ -384,7 +391,7 @@
         function buildSingleStrip() {
             const stripW = 360;  
             const targetPhotoH = 270; 
-            const gap = 4; // 📉 Drastically closed gaps down to 4px
+            const gap = 16; // 📈 Expanded spacing slightly for elegant framing padding
             const headerH = 100; 
             const footerH = 90;  
             const totalH = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
@@ -399,14 +406,12 @@
 
             capturedFrames.forEach((img, index) => {
                 const yOffset = headerH + (index * (targetPhotoH + gap));
-                const photoW = stripW - 20; // Expanded picture width to eat up edge spaces
-                const photoX = 10;
+                const photoW = stripW - 24; 
+                const photoX = 12;
                 
-                // 🛑 REMOVED STROKE/BORDER COMMANDS HERE FOR A CLEAN EDGE
                 ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
             });
 
-            // ⭐ UPGRADED HEADER STYLE: Cleaner typography, matching soccer elements
             ctx.fillStyle = "#222222";
             ctx.textAlign = "center";
             ctx.font = "bold 28px Impact, sans-serif";
@@ -415,7 +420,6 @@
             ctx.fillStyle = "#555555";
             ctx.fillText("PHOTO BOOTH", stripW / 2, 78);
 
-            // FOOTER BRANDING BAND
             ctx.fillStyle = "#1e5a38"; 
             ctx.fillRect(0, totalH - footerH, stripW, footerH);
             ctx.fillStyle = "#f1c40f";
@@ -433,40 +437,48 @@
         }
 
         function generateTwin4x6Sheet() {
-            stitchCtx.fillStyle = "#ffffff"; 
-            stitchCtx.fillRect(0, 0, 1200, 800);
-
             const singleStripElement = buildSingleStrip();
 
             const targetW = 1140; 
             const targetH = 394; 
 
-            // 📐 BALANCED PLACEMENT MATRIX: Centered perfectly on the top and bottom halves (Y=200 and Y=600)
-            // This ensures a true, seamless cut directly down the middle line!
-            
-            // STRIP 1 (TOP HALF)
+            // 1. 💾 GENERATE LANDSCAPE MASTER FILE (FOR BACKGROUND SAVE)
+            stitchCtx.fillStyle = "#ffffff"; 
+            stitchCtx.fillRect(0, 0, 1200, 800);
+
+            // Print Strip 1 (Top Landscape Half)
             stitchCtx.save();
             stitchCtx.translate(600, 200); 
             stitchCtx.rotate(-90 * Math.PI / 180); 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            // STRIP 2 (BOTTOM HALF)
+            // Print Strip 2 (Bottom Landscape Half)
             stitchCtx.save();
             stitchCtx.translate(600, 600); 
             stitchCtx.rotate(-90 * Math.PI / 180); 
             stitchCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, -targetH/2, -targetW/2, targetH, targetW);
             stitchCtx.restore();
 
-            const finalDataUrl = hiddenStitchCanvas.toDataURL('image/png');
-            
-            iosPrintTarget.src = finalDataUrl;
-            downloadLink.href = finalDataUrl;
+            // Capture the printer-ready rotated URL
+            const printerDataUrl = hiddenStitchCanvas.toDataURL('image/png');
+            downloadLink.href = printerDataUrl;
+
+            // 2. 👀 GENERATE UPRIGHT PORTRAIT RENDER (FOR POPUP SCREEN DISPLAY ONLY)
+            previewCtx.fillStyle = "#ffffff";
+            previewCtx.fillRect(0, 0, 800, 1200);
+
+            // Render Left Strip (Upright)
+            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 4, 30, 392, 1140);
+            // Render Right Strip (Upright)
+            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 404, 30, 392, 1140);
+
+            // Feed the upright graphic into the image preview box
+            iosPrintTarget.src = hiddenPreviewCanvas.toDataURL('image/png');
 
             printZone.style.display = 'flex'; 
 
-            // 🚀 AUTOMATIC SAVE TRIGGER
-            // Executes an artificial link strike, downloading instantly to Safari's folder hierarchy
+            // 🚀 AUTOMATIC SAVE TRIGGER (Saves printer layout natively)
             setTimeout(() => {
                 downloadLink.click();
             }, 100);
