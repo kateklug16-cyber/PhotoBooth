@@ -290,6 +290,11 @@
         }
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* FIX: Force hidden rendering engines to stay completely invisible */
+        #hiddenStitchCanvas, #hiddenPreviewCanvas {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -337,6 +342,7 @@
         <div class="gallery-grid" id="galleryGrid"></div>
     </div>
 
+    <!-- Background layout engines -->
     <canvas id="hiddenStitchCanvas" width="1200" height="800"></canvas>
     <canvas id="hiddenPreviewCanvas" width="800" height="1200"></canvas>
 
