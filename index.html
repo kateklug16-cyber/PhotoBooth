@@ -146,7 +146,7 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(13, 38, 25, 0.95);
+            background: rgba(13, 38, 25, 0.97);
             z-index: 30;
             flex-direction: row;
             align-items: center;
@@ -176,7 +176,6 @@
             box-shadow: 0 6px 15px rgba(0,0,0,0.4);
             text-align: center;
         }
-        .print-btn:active { transform: scale(0.95); }
 
         .reset-btn {
             background: #7f8c8d;
@@ -188,9 +187,10 @@
             text-transform: uppercase;
             border-radius: 8px;
             cursor: pointer;
+            text-align: center;
         }
 
-        /* Displays the canvas version visually inside the popup menu frame */
+        /* Displays the 4x6 landscape layout correctly on screen */
         #visiblePreviewCanvas {
             height: 440px;
             width: auto;
@@ -201,11 +201,12 @@
         }
 
         #statusFeedback {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             color: var(--gold);
             text-shadow: 1px 1px 0 #000;
             min-height: 1.4em;
             font-family: sans-serif;
+            font-weight: bold;
         }
 
         #countdown {
@@ -227,28 +228,26 @@
         .flash-trigger { animation: suddenFlash 0.3s ease-out; }
         @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-        /* Hidden backup processing canvas */
-        #stitchCanvas { display: none; }
+        #iosPrintTarget { display: none; }
 
         /* ========================================================
-           🖨️ IPAD DIRECT-CANVAS PRINT MEDIA QUERY 
+           🖨️ LANDSCAPE 4x6 AIRPRINT LAYOUT
            ======================================================== */
         @media print {
-            body, html, h1, .booth-widescreen-layout, .right-sidebar-controls, .section-title, .print-sidebar-actions {
+            @page {
+                size: 6in 4in landscape;
+                margin: 0;
+            }
+            body, html, .booth-widescreen-layout, .right-sidebar-controls, h1, .booth-box, .print-overlay-box {
                 display: none !important;
             }
-            .booth-box {
-                border: none !important; box-shadow: none !important; background: none !important;
-                width: auto !important; height: auto !important;
-            }
-            .print-overlay-box {
-                display: block !important; background: none !important;
-                position: absolute; top: 0; left: 0; padding: 0 !important; margin: 0 !important;
-            }
-            #visiblePreviewCanvas {
+            #iosPrintTarget {
                 display: block !important;
-                max-height: 100vh !important; width: auto !important;
-                border: none !important; box-shadow: none !important;
+                position: absolute;
+                top: 0; left: 0;
+                width: 6in !important;
+                height: 4in !important;
+                margin: 0 !important;
             }
         }
     </style>
@@ -267,10 +266,10 @@
 
             <div class="print-overlay-box" id="printZone">
                 <div>
-                    <canvas id="visiblePreviewCanvas" width="360" height="1080"></canvas>
+                    <canvas id="visiblePreviewCanvas" width="1200" height="800"></canvas>
                 </div>
                 <div class="print-sidebar-actions">
-                    <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Strip!</button>
+                    <button class="print-btn" onclick="triggerPrinter()">🖨️ Print Twin Strips!</button>
                     <button class="reset-btn" onclick="closePrintZone()">⚽ Take Another!</button>
                 </div>
             </div>
@@ -288,21 +287,20 @@
             </div>
 
             <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()">Take 3-Shot Strip!</button>
-            <div id="statusFeedback">Loading custom graphics...</div>
+            <div id="statusFeedback">Ready for the match!</div>
         </div>
 
     </div>
 
-    <canvas id="stitchCanvas" width="360" height="1080"></canvas>
+    <img id="iosPrintTarget" alt="Twin 4x6 Photo Strip Sheet">
 
     <script>
         const video = document.getElementById('webcam');
         const liveCanvas = document.getElementById('boothCanvas');
         const liveCtx = liveCanvas.getContext('2d');
-        const stitchCanvas = document.getElementById('stitchCanvas');
-        const stitchCtx = stitchCanvas.getContext('2d');
         const visiblePreviewCanvas = document.getElementById('visiblePreviewCanvas');
         const previewCtx = visiblePreviewCanvas.getContext('2d');
+        const iosPrintTarget = document.getElementById('iosPrintTarget');
         
         const snapBtn = document.getElementById('snapBtn');
         const statusFeedback = document.getElementById('statusFeedback');
@@ -344,7 +342,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 await video.play();
-                statusFeedback.innerText = "Stadium ready! Let's play!";
+                statusFeedback.innerText = "Ready for action!";
                 requestAnimationFrame(renderLoop);
             } catch (err) {
                 statusFeedback.innerText = "⚠️ Camera blocked.";
@@ -354,7 +352,6 @@
 
         function renderLoop() {
             liveCtx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
-
             liveCtx.save();
             liveCtx.translate(liveCanvas.width, 0);
             liveCtx.scale(-1, 1);
@@ -371,22 +368,20 @@
             if (activeImage.complete && activeImage.naturalWidth !== 0) {
                 liveCtx.drawImage(activeImage, 0, 0, liveCanvas.width, liveCanvas.height);
             }
-
             requestAnimationFrame(renderLoop);
         }
 
         async function startPhotoSequence() {
             if (video.readyState < 2) return;
             snapBtn.disabled = true;
-            printZone.style.display = 'none'; 
             capturedFrames = [];
 
             await takeSinglePhoto(1);
             await takeSinglePhoto(2);
             await takeSinglePhoto(3);
 
-            statusFeedback.innerText = "Generating championship strip...";
-            generateFinalStrip();
+            statusFeedback.innerText = "Generating twin photo strips...";
+            generateTwin4x6Sheet();
             
             statusFeedback.innerText = "Ready to print!";
             snapBtn.disabled = false;
@@ -394,7 +389,7 @@
 
         function takeSinglePhoto(photoNumber) {
             return new Promise((resolve) => {
-                statusFeedback.innerText = `Get ready for Photo ${photoNumber}!`;
+                statusFeedback.innerText = `📸 Shot ${photoNumber} of 3 incoming!`;
                 let currentCount = 3;
                 countdownDiv.innerText = currentCount;
                 countdownDiv.style.display = 'block';
@@ -421,77 +416,98 @@
             });
         }
 
-        function generateFinalStrip() {
+        // Creates one vertical strip layout on a hidden canvas tag layout
+        function buildSingleStrip() {
             const stripW = 360;  
             const targetPhotoH = 270; 
             const gap = 20;     
             const headerH = 100; 
             const footerH = 90;  
-
             const totalH = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
-            
-            // Apply dimensions to both tracking canvases
-            stitchCanvas.height = totalH; stitchCanvas.width = stripW;
-            visiblePreviewCanvas.height = totalH; visiblePreviewCanvas.width = stripW;
 
-            // Simple render helper loop to compile graphics onto both elements cleanly
-            [stitchCtx, previewCtx].forEach(ctx => {
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(0, 0, stripW, totalH);
+            const stripCanvas = document.createElement('canvas');
+            stripCanvas.width = stripW;
+            stripCanvas.height = totalH;
+            const ctx = stripCanvas.getContext('2d');
 
-                capturedFrames.forEach((img, index) => {
-                    const yOffset = headerH + (index * (targetPhotoH + gap));
-                    const photoW = stripW - 40; 
-                    const photoX = 20;
-                    ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
-                    
-                    ctx.strokeStyle = "#111111";
-                    ctx.lineWidth = 4;
-                    ctx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
-                });
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, stripW, totalH);
 
-                ctx.fillStyle = "#222222";
-                ctx.textAlign = "center";
-                ctx.font = "bold 26px Impact, sans-serif";
-                ctx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
-                ctx.font = "20px Impact, sans-serif";
-                ctx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
-
-                ctx.fillStyle = "#1e5a38"; 
-                ctx.fillRect(0, totalH - footerH, stripW, footerH);
-                ctx.fillStyle = "#f1c40f";
-                ctx.fillRect(0, totalH - footerH, stripW, 5);
-
-                ctx.fillStyle = "#ffffff";
-                ctx.strokeStyle = "#000000";
+            capturedFrames.forEach((img, index) => {
+                const yOffset = headerH + (index * (targetPhotoH + gap));
+                const photoW = stripW - 40; 
+                const photoX = 20;
+                ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
+                
+                ctx.strokeStyle = "#111111";
                 ctx.lineWidth = 4;
-                ctx.textAlign = "center";
-                ctx.font = "bold 24px Impact, sans-serif";
-                ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-                ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+                ctx.strokeRect(photoX, yOffset, photoW, targetPhotoH);
             });
 
-            printZone.style.display = 'flex'; 
+            ctx.fillStyle = "#222222";
+            ctx.textAlign = "center";
+            ctx.font = "bold 26px Impact, sans-serif";
+            ctx.fillText("⚽ WORLD CUP 🏆", stripW / 2, 45);
+            ctx.font = "20px Impact, sans-serif";
+            ctx.fillText("CHAMPIONSHIP STRIP", stripW / 2, 75);
 
-            // Safari Local File Backup Auto-Download Trigger
-            try {
-                const dataUrl = stitchCanvas.toDataURL('image/png');
-                const autoLink = document.createElement('a');
-                autoLink.href = dataUrl;
-                autoLink.download = `world_cup_strip_${Date.now()}.png`;
-                document.body.appendChild(autoLink);
-                autoLink.click();
-                document.body.removeChild(autoLink);
-            } catch(e) {
-                console.log("Local file download restriction handled.");
-            }
+            ctx.fillStyle = "#1e5a38"; 
+            ctx.fillRect(0, totalH - footerH, stripW, footerH);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(0, totalH - footerH, stripW, 5);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 4;
+            ctx.textAlign = "center";
+            ctx.font = "bold 24px Impact, sans-serif";
+            ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+
+            return stripCanvas;
         }
 
-        function triggerPrinter() { window.print(); }
+        // Bakes the single strip twice onto the visible layout canvas sheet
+        function generateTwin4x6Sheet() {
+            const canvasW = 1200;
+            const canvasH = 800;
+            
+            // Set up main target container canvas size parameters
+            visiblePreviewCanvas.width = canvasW;
+            visiblePreviewCanvas.height = canvasH;
+
+            // Draw clean background block down
+            previewCtx.fillStyle = "#ffffff"; 
+            previewCtx.fillRect(0, 0, canvasW, canvasH);
+
+            // Generate our underlying layout canvas 
+            const singleStripElement = buildSingleStrip();
+
+            // Sizing measurements to fit perfectly on a 4x6 print paper layout area
+            const finalStripW = 247; 
+            const finalStripH = 740;
+            const topY = 30;
+
+            // Draw the EXACT SAME strip twice (Left side & Right side)
+            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 240, topY, finalStripW, finalStripH);
+            previewCtx.drawImage(singleStripElement, 0, 0, singleStripElement.width, singleStripElement.height, 710, topY, finalStripW, finalStripH);
+
+            // Export to our hidden print image frame targeting iPad Safari permissions
+            const finalDataUrl = visiblePreviewCanvas.toDataURL('image/png');
+            iosPrintTarget.src = finalDataUrl;
+
+            // Show popup panel framework overlay
+            printZone.style.display = 'flex'; 
+        }
+
+        function triggerPrinter() { 
+            setTimeout(() => { window.print(); }, 50);
+        }
         
         function closePrintZone() {
             printZone.style.display = 'none';
-            statusFeedback.innerText = "Ready for the next player!";
+            iosPrintTarget.src = "";
+            statusFeedback.innerText = "Ready for the next match!";
         }
 
         window.addEventListener('DOMContentLoaded', startCamera);
