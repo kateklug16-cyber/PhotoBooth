@@ -430,6 +430,12 @@
 
         let livePrintQueueMemory = []; 
 
+        // Load custom assets
+        const customHeaderImg = new Image();
+        customHeaderImg.src = 'header.png';
+        const customFooterImg = new Image();
+        customFooterImg.src = 'footer.png';
+
         const frames = {
             birthday: new Image(),
             worldcup: new Image(),
@@ -560,34 +566,24 @@
                 ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
             });
 
-            // --- TWO-LINE TOP HEADER (SAFARI & DESKTOP ALIGNED) ---
-            ctx.fillStyle = "#222222";
-            ctx.textAlign = "center";
-            
-            // Line 1: Main title text centered perfectly
-            ctx.font = "bold 22px 'Impact', sans-serif";
-            ctx.fillText("World Cup Photo Booth", stripW / 2, 42);
+            // Draw Header
+            if (customHeaderImg.complete && customHeaderImg.naturalWidth !== 0) {
+                ctx.drawImage(customHeaderImg, 0, 0, stripW, headerH);
+            }
 
-            // Line 2: Flag emojis centered directly underneath using standard font width calculations
-            ctx.font = "18px 'Arial', sans-serif"; 
-            ctx.fillText("🇺🇸  🇨🇦  🇲🇽", stripW / 2, 76);
-
-
-            // --- BOTTOM FOOTER BLOCK ---
-            ctx.fillStyle = "#0f4c81"; 
-            ctx.fillRect(0, totalH - footerH, stripW, footerH);
-            ctx.fillStyle = "#f1c40f"; // Gold divider bar
-            ctx.fillRect(0, totalH - footerH, stripW, 5);
-
-            // Centered birthday text
-            ctx.fillStyle = "#ffffff";
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 4;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "alphabetic"; 
-            ctx.font = "bold 24px 'Impact', sans-serif";
-            ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
-            ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            // Draw Footer
+            if (customFooterImg.complete && customFooterImg.naturalWidth !== 0) {
+                ctx.drawImage(customFooterImg, 0, totalH - footerH, stripW, footerH);
+            } else {
+                ctx.fillStyle = "#0f4c81"; 
+                ctx.fillRect(0, totalH - footerH, stripW, footerH);
+                ctx.fillStyle = "#f1c40f"; 
+                ctx.fillRect(0, totalH - footerH, stripW, 5);
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.font = "bold 24px 'Impact', sans-serif";
+                ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            }
 
             return stripCanvas;
         }
