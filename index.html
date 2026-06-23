@@ -14,7 +14,7 @@
             --green-action: #2ecc71;
             --admin-gray: #34495e;
             --print-blue: #3498db;
-            --strip-blue: #0f4c81; /* Classic athletic blue for the footer */
+            --strip-blue: #0f4c81; 
         }
 
         body {
@@ -384,7 +384,7 @@
     <!-- QUICK AUTO-PREVIEW POPUP FOR KIDS -->
     <div class="kids-preview-modal" id="kidsPreviewModal">
         <div class="kids-preview-content">
-            <h2>🔥 LOOKING GOOD! HERE IS YOUR STRIP! 🔥</h2>
+            <h2>🔥 AWESOME JOB! HERE IS YOUR STRIP! 🔥</h2>
             <img class="kids-strip-img" id="kidsPreviewImg" src="" alt="Your Strip Preview">
             <div class="auto-close-timer" id="autoCloseText">Next team up in 20...</div>
         </div>
@@ -562,29 +562,26 @@
                 ctx.drawImage(img, 0, 0, 640, 480, photoX, yOffset, photoW, targetPhotoH);
             });
 
+            // UPDATED: Header changed to the custom World Cup title with flags
             ctx.fillStyle = "#222222";
             ctx.textAlign = "center";
-            ctx.font = "bold 28px Impact, sans-serif";
-            ctx.fillText("⚽ FITZ'S ALL-STAR ⚽", stripW / 2, 48);
-            ctx.font = "20px Impact, sans-serif";
-            ctx.fillStyle = "#555555";
-            ctx.fillText("PHOTO BOOTH", stripW / 2, 78);
+            ctx.font = "bold 23px Impact, sans-serif";
+            ctx.fillText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, 60);
 
-            // CHANGED: Bottom background section changed from Green to Athletic Blue
+            // Bottom background section remains Athletic Blue
             ctx.fillStyle = "#0f4c81"; 
             ctx.fillRect(0, totalH - footerH, stripW, footerH);
             ctx.fillStyle = "#f1c40f"; // Gold divider bar
             ctx.fillRect(0, totalH - footerH, stripW, 5);
 
+            // UPDATED: Footer text reverted back to centered birthday message
             ctx.fillStyle = "#ffffff";
             ctx.strokeStyle = "#000000";
             ctx.lineWidth = 4;
             ctx.textAlign = "center";
-            ctx.font = "bold 23px Impact, sans-serif";
-            
-            // CHANGED: Heading updated to custom World Cup name with regional flags
-            ctx.strokeText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, totalH - 36);
-            ctx.fillText("World Cup Photo Booth 🇺🇸 🇨🇦 🇲🇽", stripW / 2, totalH - 36);
+            ctx.font = "bold 24px Impact, sans-serif";
+            ctx.strokeText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
+            ctx.fillText("HAPPY 8th BIRTHDAY FITZ!", stripW / 2, totalH - 36);
 
             return stripCanvas;
         }
