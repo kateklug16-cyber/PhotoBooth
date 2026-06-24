@@ -1,0 +1,9 @@
+{
+  "name": "Fitz World Cup Booth",
+  "short_name": "PhotoBooth",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1e5a38",
+  "theme_color": "#1e5a38",
+  "icons": []
+}
