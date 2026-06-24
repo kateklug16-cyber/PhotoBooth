@@ -3,164 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fitz's World Cup 2026 Photo Booth</title>
-    
+    <title>Fitz's Photo Booth</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Fitz Booth">
-
     <style>
-        :root {
-            --pitch-green: #1e5a38;
-            --stadium-dark: #0d2619;
-            --gold: #f1c40f;
-            --white: #ffffff;
-            --booth-red: #e74c3c;
-            --green-action: #2ecc71;
-            --admin-gray: #34495e;
-            --print-blue: #3498db;
-        }
-
-        body {
-            margin: 0;
-            padding: 25px 10px 15px 10px; 
-            box-sizing: border-box;
-            background: radial-gradient(circle, #1e5a38 0%, var(--stadium-dark) 100%);
-            font-family: 'Impact', 'Arial Black', sans-serif;
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        h1 { text-transform: uppercase; font-size: 2.1rem; margin: 5px 0 15px 0; text-shadow: 3px 3px 0px #000; letter-spacing: 1px; text-align: center; }
-
-        .booth-widescreen-layout { display: flex; flex-direction: row; gap: 20px; align-items: flex-start; justify-content: center; max-width: 960px; width: 100%; margin-bottom: 15px; }
-
-        .booth-box { position: relative; width: 640px; height: 480px; border: 10px solid #fff; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.7); background-color: #111; overflow: hidden; flex-shrink: 0; }
-
-        #webcam { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; }
-        #boothCanvas { width: 100%; height: 100%; display: block; }
-
-        .right-sidebar-controls { display: flex; flex-direction: column; width: 260px; gap: 12px; }
-        .frame-btn { background: #222; color: #fff; border: 3px solid #555; padding: 8px 10px; font-family: 'Impact', sans-serif; font-size: 0.85rem; text-transform: uppercase; border-radius: 8px; cursor: pointer; }
-        .frame-btn.active { background: var(--gold); color: #000; border-color: #fff; }
-        .snap-btn { background: var(--booth-red); border: 4px solid #fff; color: white; padding: 12px 20px; font-size: 1.3rem; font-family: 'Impact', sans-serif; text-transform: uppercase; border-radius: 12px; cursor: pointer; }
-        .snap-btn:disabled { background: #7f8c8d; }
-
-        #statusFeedback { font-size: 1.1rem; color: var(--gold); text-shadow: 1px 1px 0 #000; font-family: sans-serif; font-weight: bold; text-align: center; }
-        
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 9rem; color: var(--gold); text-shadow: 6px 6px 0px #000; display: none; z-index: 10; }
-        #flashLayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; opacity: 0; pointer-events: none; z-index: 20; }
-        .flash-trigger { animation: suddenFlash 0.3s ease-out; }
-        @keyframes suddenFlash { 0% { opacity: 1; } 100% { opacity: 0; } }
-
-        .admin-dashboard { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 15, 15, 0.98); z-index: 200; padding: 30px; overflow-y: auto; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
-        .gallery-card { background: #222; border: 3px solid #444; padding: 12px; display: flex; flex-direction: column; align-items: center; }
-        .thumb-preview { max-height: 250px; width: auto; background: white; }
+        /* (Keep your existing styles here - they are working well!) */
+        body { background: #1e5a38; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .booth-box { width: 640px; height: 480px; border: 10px solid white; position: relative; overflow: hidden; }
+        #boothCanvas { width: 100%; height: 100%; }
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: #f1c40f; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>⚽ FITZ'S 8th BIRTHDAY BOOTH 🏆</h1>
-
-    <div class="booth-widescreen-layout">
-        <div class="booth-box">
-            <video id="webcam" autoplay playsinline muted webkit-playsinline></video>
-            <canvas id="boothCanvas" width="640" height="480"></canvas>
-            <div id="countdown">3</div>
-            <div id="flashLayer"></div>
-        </div>
-
-        <div class="right-sidebar-controls">
-            <div class="frame-selectors" id="frameContainer">
-                <button class="frame-btn active" onclick="selectFrame('birthday', event)">🎉 Happy Birthday Fitz!</button>
-                <button class="frame-btn" onclick="selectFrame('worldcup', event)">🏆 World Cup Let's Go!</button>
-            </div>
-            <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()">Take 3-Shot Strip!</button>
-            <div id="statusFeedback">Ready for action!</div>
-        </div>
+    <h1>FITZ'S 8th BIRTHDAY BOOTH</h1>
+    <div class="booth-box">
+        <video id="webcam" autoplay playsinline style="display:none;"></video>
+        <canvas id="boothCanvas" width="640" height="480"></canvas>
+        <div id="countdown">3</div>
     </div>
-
-    <button onclick="document.getElementById('adminDashboard').style.display='flex'">⚙️ Open Print Queue</button>
-
-    <div class="admin-dashboard" id="adminDashboard">
-        <button onclick="document.getElementById('adminDashboard').style.display='none'">Close</button>
-        <div class="gallery-grid" id="galleryGrid"></div>
-    </div>
+    <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()" style="margin:20px; padding:20px; font-size:20px;">START 3-SHOT SEQUENCE</button>
+    <button onclick="openAdminDashboard()">⚙️ VIEW PRINT QUEUE</button>
 
     <canvas id="hiddenStitchCanvas" width="1200" height="800" style="display:none"></canvas>
     <canvas id="hiddenPreviewCanvas" width="800" height="1200" style="display:none"></canvas>
+
+    <div id="adminDashboard" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; padding:20px;">
+        <button onclick="document.getElementById('adminDashboard').style.display='none'">CLOSE</button>
+        <div id="galleryGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
+    </div>
 
     <script>
         const video = document.getElementById('webcam'), liveCanvas = document.getElementById('boothCanvas'), liveCtx = liveCanvas.getContext('2d');
         const hiddenStitchCanvas = document.getElementById('hiddenStitchCanvas'), stitchCtx = hiddenStitchCanvas.getContext('2d');
         const hiddenPreviewCanvas = document.getElementById('hiddenPreviewCanvas'), previewCtx = hiddenPreviewCanvas.getContext('2d');
-        
         let capturedFrames = [], livePrintQueueMemory = [];
-
-        // LOAD IMAGES
         const customHeaderImg = new Image(); customHeaderImg.src = 'header.png';
         const customFooterImg = new Image(); customFooterImg.src = 'footer.png';
-        const birthdayFrame = new Image(); birthdayFrame.src = 'Happy Birthday.png';
 
         async function startCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
-            requestAnimationFrame(renderLoop);
-        }
-
-        function renderLoop() {
-            liveCtx.clearRect(0, 0, 640, 480);
-            liveCtx.save(); liveCtx.translate(640, 0); liveCtx.scale(-1, 1);
-            liveCtx.drawImage(video, 0, 0, 640, 480);
-            liveCtx.restore();
-            liveCtx.drawImage(birthdayFrame, 0, 0, 640, 480);
-            requestAnimationFrame(renderLoop);
-        }
-
-        function buildSingleStrip() {
-            const stripW = 360, headerH = 100, footerH = 90, targetPhotoH = 270, gap = 16;
-            const totalH = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
-            const stripCanvas = document.createElement('canvas');
-            stripCanvas.width = stripW; stripCanvas.height = totalH;
-            const ctx = stripCanvas.getContext('2d');
-
-            ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, stripW, totalH);
-            capturedFrames.forEach((img, index) => {
-                ctx.drawImage(img, 12, headerH + (index * (targetPhotoH + gap)), stripW - 24, targetPhotoH);
-            });
-
-            if (customHeaderImg.complete && customHeaderImg.naturalWidth > 0) ctx.drawImage(customHeaderImg, 0, 0, stripW, headerH);
-            if (customFooterImg.complete && customFooterImg.naturalWidth > 0) ctx.drawImage(customFooterImg, 0, totalH - footerH, stripW, footerH);
-            return stripCanvas;
+            function draw() {
+                liveCtx.save(); liveCtx.translate(640, 0); liveCtx.scale(-1, 1);
+                liveCtx.drawImage(video, 0, 0, 640, 480);
+                liveCtx.restore();
+                requestAnimationFrame(draw);
+            }
+            draw();
         }
 
         async function startPhotoSequence() {
+            document.getElementById('snapBtn').disabled = true;
             capturedFrames = [];
             for(let i=0; i<3; i++) {
-                // Simplified capture: in real use, add your countdown logic here
+                document.getElementById('countdown').style.display = 'block';
+                await new Promise(r => setTimeout(r, 2000)); // 2 sec delay
                 const tempImg = new Image();
                 tempImg.src = liveCanvas.toDataURL('image/png');
                 await new Promise(r => tempImg.onload = r);
                 capturedFrames.push(tempImg);
             }
-            // Generate and Queue logic...
-            alert("Photos taken! Check the Print Queue.");
+            document.getElementById('countdown').style.display = 'none';
+            generateAndQueue();
+            document.getElementById('snapBtn').disabled = false;
         }
 
-        // PWA Registration
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:text/javascript,self.addEventListener("fetch",()=>{});').then(() => console.log('PWA Registered'));
+        function generateAndQueue() {
+            const stripW = 360, headerH = 100, footerH = 90, targetPhotoH = 270, gap = 16;
+            const stripCanvas = document.createElement('canvas');
+            stripCanvas.width = stripW; stripCanvas.height = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
+            const ctx = stripCanvas.getContext('2d');
+            ctx.fillStyle = "white"; ctx.fillRect(0,0,stripW, stripCanvas.height);
+            
+            capturedFrames.forEach((img, i) => ctx.drawImage(img, 12, headerH + (i * (targetPhotoH + gap)), stripW - 24, targetPhotoH));
+            ctx.drawImage(customHeaderImg, 0, 0, stripW, headerH);
+            ctx.drawImage(customFooterImg, 0, stripCanvas.height - footerH, stripW, footerH);
+
+            livePrintQueueMemory.push({ printImg: stripCanvas.toDataURL(), previewImg: stripCanvas.toDataURL() });
+            alert("Strip saved to queue!");
         }
 
-        window.addEventListener('DOMContentLoaded', startCamera);
+        function openAdminDashboard() {
+            document.getElementById('adminDashboard').style.display = 'block';
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = "";
+            livePrintQueueMemory.forEach((item, i) => {
+                const img = document.createElement('img');
+                img.src = item.previewImg;
+                img.style.width = "200px";
+                img.onclick = () => printImage(item.printImg);
+                grid.appendChild(img);
+            });
+        }
+
+        function printImage(url) {
+            const w = window.open();
+            w.document.write(`<img src="${url}" onload="window.print();window.close()">`);
+        }
+
+        startCamera();
     </script>
 </body>
 </html>
