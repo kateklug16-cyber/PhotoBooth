@@ -2,106 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fitz's Photo Booth</title>
-    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitz's Birthday Booth</title>
     <style>
-        /* (Keep your existing styles here - they are working well!) */
-        body { background: #1e5a38; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-        .booth-box { width: 640px; height: 480px; border: 10px solid white; position: relative; overflow: hidden; }
+        body { background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; }
+        #booth-container { position: relative; width: 640px; height: 480px; border: 5px solid #fff; }
         #boothCanvas { width: 100%; height: 100%; }
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: #f1c40f; display: none; }
+        .controls { margin-top: 20px; }
+        button { padding: 15px 30px; font-size: 1.2rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1>FITZ'S 8th BIRTHDAY BOOTH</h1>
-    <div class="booth-box">
+    <div id="booth-container">
         <video id="webcam" autoplay playsinline style="display:none;"></video>
         <canvas id="boothCanvas" width="640" height="480"></canvas>
-        <div id="countdown">3</div>
     </div>
-    <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()" style="margin:20px; padding:20px; font-size:20px;">START 3-SHOT SEQUENCE</button>
-    <button onclick="openAdminDashboard()">⚙️ VIEW PRINT QUEUE</button>
 
-    <canvas id="hiddenStitchCanvas" width="1200" height="800" style="display:none"></canvas>
-    <canvas id="hiddenPreviewCanvas" width="800" height="1200" style="display:none"></canvas>
-
-    <div id="adminDashboard" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black; padding:20px;">
-        <button onclick="document.getElementById('adminDashboard').style.display='none'">CLOSE</button>
-        <div id="galleryGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
+    <div class="controls">
+        <button id="snapBtn" onclick="startSequence()">SNAP 3 PHOTOS</button>
+        <button onclick="openAdmin()">PRINT QUEUE</button>
     </div>
 
     <script>
-        const video = document.getElementById('webcam'), liveCanvas = document.getElementById('boothCanvas'), liveCtx = liveCanvas.getContext('2d');
-        const hiddenStitchCanvas = document.getElementById('hiddenStitchCanvas'), stitchCtx = hiddenStitchCanvas.getContext('2d');
-        const hiddenPreviewCanvas = document.getElementById('hiddenPreviewCanvas'), previewCtx = hiddenPreviewCanvas.getContext('2d');
-        let capturedFrames = [], livePrintQueueMemory = [];
-        const customHeaderImg = new Image(); customHeaderImg.src = 'header.png';
-        const customFooterImg = new Image(); customFooterImg.src = 'footer.png';
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('boothCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = new Image(); 
+        overlay.src = 'Happy Birthday.png'; // Make sure this is exactly right!
 
-        async function startCamera() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-            function draw() {
-                liveCtx.save(); liveCtx.translate(640, 0); liveCtx.scale(-1, 1);
-                liveCtx.drawImage(video, 0, 0, 640, 480);
-                liveCtx.restore();
+        async function init() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
                 requestAnimationFrame(draw);
-            }
-            draw();
+            } catch (e) { alert("Camera Error: " + e); }
         }
 
-        async function startPhotoSequence() {
+        function draw() {
+            ctx.save();
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, -640, 0, 640, 480);
+            ctx.restore();
+            // Draw overlay directly
+            if(overlay.complete) ctx.drawImage(overlay, 0, 0, 640, 480);
+            requestAnimationFrame(draw);
+        }
+
+        async function startSequence() {
             document.getElementById('snapBtn').disabled = true;
-            capturedFrames = [];
+            let frames = [];
             for(let i=0; i<3; i++) {
-                document.getElementById('countdown').style.display = 'block';
-                await new Promise(r => setTimeout(r, 2000)); // 2 sec delay
-                const tempImg = new Image();
-                tempImg.src = liveCanvas.toDataURL('image/png');
-                await new Promise(r => tempImg.onload = r);
-                capturedFrames.push(tempImg);
+                alert("Taking shot " + (i+1));
+                await new Promise(r => setTimeout(r, 1000));
+                frames.push(canvas.toDataURL('image/jpeg', 0.8)); // Use JPEG for smaller size
             }
-            document.getElementById('countdown').style.display = 'none';
-            generateAndQueue();
+            alert("Done! Creating your strip...");
+            // Build the strip here...
             document.getElementById('snapBtn').disabled = false;
         }
 
-        function generateAndQueue() {
-            const stripW = 360, headerH = 100, footerH = 90, targetPhotoH = 270, gap = 16;
-            const stripCanvas = document.createElement('canvas');
-            stripCanvas.width = stripW; stripCanvas.height = headerH + (targetPhotoH * 3) + (gap * 2) + footerH;
-            const ctx = stripCanvas.getContext('2d');
-            ctx.fillStyle = "white"; ctx.fillRect(0,0,stripW, stripCanvas.height);
-            
-            capturedFrames.forEach((img, i) => ctx.drawImage(img, 12, headerH + (i * (targetPhotoH + gap)), stripW - 24, targetPhotoH));
-            ctx.drawImage(customHeaderImg, 0, 0, stripW, headerH);
-            ctx.drawImage(customFooterImg, 0, stripCanvas.height - footerH, stripW, footerH);
-
-            livePrintQueueMemory.push({ printImg: stripCanvas.toDataURL(), previewImg: stripCanvas.toDataURL() });
-            alert("Strip saved to queue!");
-        }
-
-        function openAdminDashboard() {
-            document.getElementById('adminDashboard').style.display = 'block';
-            const grid = document.getElementById('galleryGrid');
-            grid.innerHTML = "";
-            livePrintQueueMemory.forEach((item, i) => {
-                const img = document.createElement('img');
-                img.src = item.previewImg;
-                img.style.width = "200px";
-                img.onclick = () => printImage(item.printImg);
-                grid.appendChild(img);
-            });
-        }
-
-        function printImage(url) {
-            const w = window.open();
-            w.document.write(`<img src="${url}" onload="window.print();window.close()">`);
-        }
-
-        startCamera();
+        init();
     </script>
 </body>
 </html>
