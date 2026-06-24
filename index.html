@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fitz's 8th Birthday Booth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fitz's Birthday Booth</title>
     <style>
-        :root { --gold: #f1c40f; --red: #e74c3c; }
-        body { background: #111; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 10px; }
-        .booth-box { width: 640px; height: 480px; border: 10px solid white; position: relative; overflow: hidden; }
+        :root { --gold: #f1c40f; --red: #e74c3c; --blue: #0f4c81; }
+        body { background: radial-gradient(circle, #1e5a38 0%, #0d2619 100%); color: white; font-family: 'Impact', sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        .booth-box { width: 640px; height: 480px; border: 10px solid white; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
         #boothCanvas { width: 100%; height: 100%; }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
-        .snap-btn { background: var(--red); color: white; padding: 15px; font-weight: bold; border: none; cursor: pointer; }
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: var(--gold); display: none; }
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10rem; color: var(--gold); display: none; text-shadow: 4px 4px 0 #000; }
+        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; width: 640px; }
+        button { padding: 15px; cursor: pointer; font-family: sans-serif; font-weight: bold; }
+        .snap-btn { background: var(--red); color: white; border: none; font-size: 1.5rem; width: 640px; }
         .admin-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; overflow-y: auto; padding: 20px; z-index: 100; }
     </style>
 </head>
@@ -32,12 +33,12 @@
         <button onclick="setFrame('2026.png')">2026</button>
     </div>
 
-    <button id="snapBtn" class="snap-btn" onclick="startPhotoSequence()">TAKE 3-SHOT STRIP</button>
-    <button onclick="document.getElementById('admin').style.display='block'">PRINT QUEUE</button>
+    <button class="snap-btn" id="snapBtn" onclick="startPhotoSequence()">TAKE 3-SHOT STRIP</button>
+    <button onclick="document.getElementById('admin').style.display='block'" style="margin-top:10px;">PRINT QUEUE MANAGER</button>
 
     <div id="admin" class="admin-view">
         <button onclick="document.getElementById('admin').style.display='none'">CLOSE</button>
-        <div id="gallery" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
+        <div id="gallery" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:20px; padding-top:20px;"></div>
     </div>
 
     <script>
@@ -64,14 +65,15 @@
             document.getElementById('snapBtn').disabled = true;
             captured = [];
             for(let i=0; i<3; i++) {
-                document.getElementById('countdown').style.display = 'block';
-                await new Promise(r => setTimeout(r, 2000));
+                const count = document.getElementById('countdown');
+                count.innerText = 3 - i; count.style.display = 'block';
+                await new Promise(r => setTimeout(r, 1000));
+                count.style.display = 'none';
                 const img = new Image();
                 img.src = canvas.toDataURL('image/png');
                 await new Promise(r => img.onload = r);
                 captured.push(img);
             }
-            document.getElementById('countdown').style.display = 'none';
             generateStrip();
             document.getElementById('snapBtn').disabled = false;
         }
@@ -84,17 +86,27 @@
             ctx2.drawImage(header, 0, 0, 360, 100);
             ctx2.drawImage(footer, 0, c.height-90, 360, 90);
             queue.push(c.toDataURL());
-            alert("Added to Print Queue!");
+            alert("Strip saved to queue!");
+        }
+
+        function printImage(url) {
+            const w = window.open('', '_blank');
+            w.document.write(`<html><body><img src="${url}" style="width:100%" onload="window.print();window.close()"></body></html>`);
+            w.document.close();
         }
 
         function openAdmin() {
             const g = document.getElementById('gallery'); g.innerHTML = "";
             queue.forEach(url => {
-                const img = document.createElement('img'); img.src = url; img.style.width = "200px";
-                img.onclick = () => { const w = window.open(); w.document.write(`<img src="${url}" onload="window.print();window.close()">`); };
+                const img = document.createElement('img'); img.src = url; img.style.width = "100%";
+                img.onclick = () => printImage(url);
                 g.appendChild(img);
             });
         }
+        
+        // Ensure admin button calls the refresh function
+        document.querySelector('button[onclick*="admin"]').onclick = openAdmin;
+        
         init();
     </script>
 </body>
